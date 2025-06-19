@@ -1,0 +1,71 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Paleta de cores principal */
+  --cor-primaria: #1E2A38;
+  --cor-secundaria: #00B0FF;
+  --cor-acao: #007BFF;
+  --cor-fundo: #F9FAFB;
+  --cor-texto-principal: #333333;
+  --cor-texto-secundario: #6B7280;
+  --cor-borda: #E5E7EB;
+  --cor-sucesso: #10B981;
+  --cor-erro: #EF4444;
+}
+
+body {
+  color: var(--cor-texto-principal);
+  background: var(--cor-fundo);
+  font-family: var(--font-inter, Inter, sans-serif);
+  font-size: 15px;
+}
+
+@layer base {
+  h1 {
+    @apply text-2xl font-bold;
+  }
+  h2 {
+    @apply text-xl font-semibold;
+  }
+  h3 {
+    @apply text-lg font-medium;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply px-4 py-2 rounded font-semibold transition-colors;
+    }
+  .btn-primary {
+    background-color: var(--cor-acao);
+    color: white;
+    @apply hover:brightness-90;
+  }
+  .btn-outline {
+    border: 1px solid var(--cor-borda);
+    color: var(--cor-texto-principal);
+    @apply bg-white hover:bg-gray-100;
+  }
+  .input {
+    border: 1px solid var(--cor-borda);
+    @apply rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--cor-acao)];
+  }
+  .card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: rgba(0, 0, 0, 0.05) 0px 2px 8px;
+    padding: 24px;
+  }
+}
+
+@media print {
+  body {
+    font-size: 11pt;
+  }
+  @page {
+    size: A4;
+    margin: 20mm;
+  }
+}
