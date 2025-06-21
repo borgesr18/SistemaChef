@@ -44,11 +44,11 @@ export async function POST(req: NextRequest) {
         categoria: data.categoria,
         marca: data.marca,
         unidadeMedida: data.unidadeMedida,
-        preco: data.preco,
-        precoUnitario: data.precoUnitario,
+        preco: parseFloat(data.preco),
+        precoUnitario: data.precoUnitario ? parseFloat(data.precoUnitario) : null,
         fornecedor: data.fornecedor,
-        pesoEmbalagem: data.pesoEmbalagem,
-        infoNutricional: data.infoNutricional
+        pesoEmbalagem: data.pesoEmbalagem ? parseFloat(data.pesoEmbalagem) : null,
+        infoNutricional: data.infoNutricional || null
       },
       include: {
         categoriaRef: true,
