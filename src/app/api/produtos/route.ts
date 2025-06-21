@@ -38,21 +38,25 @@ export async function POST(req: NextRequest) {
     
     const data = await req.json();
     
+    const categoria = await prisma.categoria.findFirst({
+      where: { nome: data.categoria }
+    });
+    
+    const unidade = await prisma.unidade.findFirst({
+      where: { nome: data.unidadeMedida }
+    });
+    
     const produto = await prisma.produto.create({
       data: {
         nome: data.nome,
-        categoria: data.categoria,
+        categoria: categoria?.id || null,
         marca: data.marca,
-        unidadeMedida: data.unidadeMedida,
-        preco: data.preco,
-        precoUnitario: data.precoUnitario,
+        unidadeMedida: unidade?.id || data.unidadeMedida,
+        preco: parseFloat(data.preco),
+        precoUnitario: data.precoUnitario ? parseFloat(data.precoUnitario) : null,
         fornecedor: data.fornecedor,
-        pesoEmbalagem: data.pesoEmbalagem,
-        infoNutricional: data.infoNutricional
-      },
-      include: {
-        categoriaRef: true,
-        unidadeRef: true
+        pesoEmbalagem: data.pesoEmbalagem ? parseFloat(data.pesoEmbalagem) : null,
+        infoNutricional: data.infoNutricional || null
       }
     });
 
