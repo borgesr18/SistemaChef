@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -21,6 +21,39 @@ export default function RelatoriosPage() {
   } = useRelatorios();
   
   const [tipoRelatorio, setTipoRelatorio] = useState('completo');
+  const [dadosRelatorio, setDadosRelatorio] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const carregarRelatorio = async () => {
+      setIsLoading(true);
+      try {
+        let dados;
+        switch (tipoRelatorio) {
+          case 'custos':
+            dados = await gerarRelatorioCustos();
+            break;
+          case 'ingredientes':
+            dados = await gerarRelatorioIngredientes();
+            break;
+          case 'receitas':
+            dados = await gerarRelatorioReceitas();
+            break;
+          case 'estoque':
+            dados = gerarRelatorioEstoque();
+            break;
+          default:
+            dados = await gerarRelatorioCompleto();
+        }
+        setDadosRelatorio(dados);
+      } catch (error) {
+        console.error('Erro ao carregar relatório:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    carregarRelatorio();
+  }, [tipoRelatorio, gerarRelatorioCompleto, gerarRelatorioCustos, gerarRelatorioIngredientes, gerarRelatorioReceitas, gerarRelatorioEstoque]);
   
   const formatarPreco = (preco: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -29,30 +62,32 @@ export default function RelatoriosPage() {
     }).format(preco);
   };
   
-  const gerarDadosExportacao = () => {
+  const gerarDadosExportacao = async () => {
+    if (!dadosRelatorio) return null;
+    
     switch (tipoRelatorio) {
       case 'estoque': {
-        const r = gerarRelatorioEstoque();
+        const r = dadosRelatorio;
         return {
           titulo: 'Relatório de Estoque',
           cabecalho: ['Produto', 'Quantidade', 'Preço', 'Valor Total'],
-          linhas: r.itens.map((i) => [i.nome, String(i.quantidade), formatarPreco(i.preco), formatarPreco(i.valorTotal)]),
+          linhas: r.itens.map((i: any) => [i.nome, String(i.quantidade), formatarPreco(i.preco), formatarPreco(i.valorTotal)]),
           rodape: `Total em estoque: ${formatarPreco(r.valorTotalEstoque)}`
         };
       }
       case 'ingredientes': {
-        const r = gerarRelatorioIngredientes();
+        const r = dadosRelatorio;
         return {
           titulo: 'Relatório de Ingredientes',
           cabecalho: ['Ingrediente', 'Quantidade', 'Ocorrências'],
-          linhas: r.ingredientesMaisUsados.map((i) => [i.nome, `${i.quantidade} ${i.unidade}`, String(i.ocorrencias)]),
+          linhas: r.ingredientesMaisUsados.map((i: any) => [i.nome, `${i.quantidade} ${i.unidade}`, String(i.ocorrencias)]),
           rodape: ''
         };
       }
       case 'custos': {
-        const r = gerarRelatorioCustos();
-        const linhasMais = r.fichasMaisCustos.map((f) => [f.nome, formatarPreco(f.custo)]);
-        const linhasMenos = r.fichasMenosCustos.map((f) => [f.nome, formatarPreco(f.custo)]);
+        const r = dadosRelatorio;
+        const linhasMais = r.fichasMaisCustos.map((f: any) => [f.nome, formatarPreco(f.custo)]);
+        const linhasMenos = r.fichasMenosCustos.map((f: any) => [f.nome, formatarPreco(f.custo)]);
         return {
           titulo: 'Relatório de Custos',
           cabecalho: ['Nome', 'Custo'],
@@ -61,32 +96,37 @@ export default function RelatoriosPage() {
         };
       }
       case 'receitas': {
-        const r = gerarRelatorioReceitas();
+        const r = dadosRelatorio;
         return {
           titulo: 'Relatório de Receitas',
           cabecalho: ['Categoria', 'Quantidade'],
-          linhas: r.distribuicaoCategoriasReceitas.map((c) => [c.categoria, String(c.quantidade)]),
+          linhas: r.distribuicaoCategoriasReceitas.map((c: any) => [c.categoria, String(c.quantidade)]),
           rodape: `Total de fichas técnicas: ${r.totalFichasTecnicas}`
         };
       }
       default: {
-        const r = gerarRelatorioCompleto();
-        const linhas = r.fichasMaisCustos.map((f) => [f.nome, formatarPreco(f.custo)]);
+        const r = dadosRelatorio;
         return {
           titulo: 'Relatório Completo',
-          cabecalho: ['Nome', 'Custo'],
-          linhas,
-          rodape: `Total de produtos: ${r.totalProdutos}`
+          cabecalho: ['Métrica', 'Valor'],
+          linhas: [
+            ['Total de Produtos', String(r.totalProdutos)],
+            ['Total de Fichas Técnicas', String(r.totalFichasTecnicas)],
+            ['Custo Total Estimado', formatarPreco(r.custoTotalEstoque)],
+            ['Custo Médio por Ficha', formatarPreco(r.custoMedioPorFicha)]
+          ],
+          rodape: ''
         };
       }
     }
   };
 
   const handleExportarPDF = async () => {
-    const dados = gerarDadosExportacao();
+    const dados = await gerarDadosExportacao();
+    if (!dados) return;
+    
     const doc = new jsPDF();
     doc.text(dados.titulo, 10, 10);
-    // @ts-ignore - autoTable typed separately
     autoTable(doc, { head: [dados.cabecalho], body: dados.linhas, startY: 20 });
     if (dados.rodape) {
       const finalY = (doc as any).lastAutoTable.finalY || 20;
@@ -95,8 +135,10 @@ export default function RelatoriosPage() {
     doc.save('relatorio.pdf');
   };
 
-  const handleExportarExcel = () => {
-    const dados = gerarDadosExportacao();
+  const handleExportarExcel = async () => {
+    const dados = await gerarDadosExportacao();
+    if (!dados) return;
+    
     const worksheet = XLSX.utils.aoa_to_sheet([dados.cabecalho, ...dados.linhas]);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Relatorio');
@@ -104,6 +146,22 @@ export default function RelatoriosPage() {
   };
   
   const renderizarRelatorio = () => {
+    if (isLoading) {
+      return (
+        <div className="flex justify-center items-center h-64">
+          <div className="text-gray-500">Carregando relatório...</div>
+        </div>
+      );
+    }
+
+    if (!dadosRelatorio) {
+      return (
+        <div className="flex justify-center items-center h-64">
+          <div className="text-gray-500">Erro ao carregar dados do relatório</div>
+        </div>
+      );
+    }
+
     switch (tipoRelatorio) {
       case 'completo':
         return renderizarRelatorioCompleto();
@@ -111,17 +169,17 @@ export default function RelatoriosPage() {
         return renderizarRelatorioCustos();
       case 'ingredientes':
         return renderizarRelatorioIngredientes();
-      case 'receitas':
-        return renderizarRelatorioReceitas();
       case 'estoque':
         return renderizarRelatorioEstoque();
+      case 'receitas':
+        return renderizarRelatorioReceitas();
       default:
-        return renderizarRelatorioCompleto();
+        return <div>Tipo de relatório não encontrado</div>;
     }
   };
   
   const renderizarRelatorioCompleto = () => {
-    const relatorio = gerarRelatorioCompleto();
+    const relatorio = dadosRelatorio;
     
     return (
       <div className="space-y-6">
@@ -161,7 +219,7 @@ export default function RelatoriosPage() {
               <h3 className="text-lg font-medium text-gray-700 mb-4">Mais Caras</h3>
               {relatorio.fichasMaisCustos.length > 0 ? (
                 <Table headers={['Nome', 'Custo']}>
-                  {relatorio.fichasMaisCustos.map((ficha) => (
+                  {relatorio.fichasMaisCustos.map((ficha: any) => (
                     <TableRow key={ficha.id}>
                       <TableCell>
                         <Link href={`/fichas-tecnicas/${ficha.id}`} className="text-blue-600 hover:underline">
@@ -181,7 +239,7 @@ export default function RelatoriosPage() {
               <h3 className="text-lg font-medium text-gray-700 mb-4">Mais Econômicas</h3>
               {relatorio.fichasMenosCustos.length > 0 ? (
                 <Table headers={['Nome', 'Custo']}>
-                  {relatorio.fichasMenosCustos.map((ficha) => (
+                  {relatorio.fichasMenosCustos.map((ficha: any) => (
                     <TableRow key={ficha.id}>
                       <TableCell>
                         <Link href={`/fichas-tecnicas/${ficha.id}`} className="text-blue-600 hover:underline">
@@ -202,7 +260,7 @@ export default function RelatoriosPage() {
         <Card title="Ingredientes Mais Utilizados">
           {relatorio.ingredientesMaisUsados.length > 0 ? (
             <Table headers={['Ingrediente', 'Quantidade Total', 'Presente em']}>
-              {relatorio.ingredientesMaisUsados.map((ingrediente) => (
+              {relatorio.ingredientesMaisUsados.map((ingrediente: any) => (
                 <TableRow key={ingrediente.id}>
                   <TableCell>{ingrediente.nome}</TableCell>
                   <TableCell>{ingrediente.quantidade} {ingrediente.unidade}</TableCell>
@@ -219,7 +277,7 @@ export default function RelatoriosPage() {
           <Card title="Distribuição de Categorias de Produtos">
             {relatorio.distribuicaoCategoriasProdutos.length > 0 ? (
               <Table headers={['Categoria', 'Quantidade', 'Percentual']}>
-                {relatorio.distribuicaoCategoriasProdutos.map((categoria) => (
+                {relatorio.distribuicaoCategoriasProdutos.map((categoria: any) => (
                   <TableRow key={categoria.categoria}>
                     <TableCell>{categoria.categoria}</TableCell>
                     <TableCell>{categoria.quantidade}</TableCell>
@@ -237,7 +295,7 @@ export default function RelatoriosPage() {
           <Card title="Distribuição de Categorias de Receitas">
             {relatorio.distribuicaoCategoriasReceitas.length > 0 ? (
               <Table headers={['Categoria', 'Quantidade', 'Percentual']}>
-                {relatorio.distribuicaoCategoriasReceitas.map((categoria) => (
+                {relatorio.distribuicaoCategoriasReceitas.map((categoria: any) => (
                   <TableRow key={categoria.categoria}>
                     <TableCell>{categoria.categoria}</TableCell>
                     <TableCell>{categoria.quantidade}</TableCell>
@@ -257,7 +315,7 @@ export default function RelatoriosPage() {
   };
   
   const renderizarRelatorioCustos = () => {
-    const relatorio = gerarRelatorioCustos();
+    const relatorio = dadosRelatorio;
     
     return (
       <div className="space-y-6">
@@ -283,7 +341,7 @@ export default function RelatoriosPage() {
               <h3 className="text-lg font-medium text-gray-700 mb-4">Mais Caras</h3>
               {relatorio.fichasMaisCustos.length > 0 ? (
                 <Table headers={['Nome', 'Custo']}>
-                  {relatorio.fichasMaisCustos.map((ficha) => (
+                  {relatorio.fichasMaisCustos.map((ficha: any) => (
                     <TableRow key={ficha.id}>
                       <TableCell>
                         <Link href={`/fichas-tecnicas/${ficha.id}`} className="text-blue-600 hover:underline">
@@ -303,7 +361,7 @@ export default function RelatoriosPage() {
               <h3 className="text-lg font-medium text-gray-700 mb-4">Mais Econômicas</h3>
               {relatorio.fichasMenosCustos.length > 0 ? (
                 <Table headers={['Nome', 'Custo']}>
-                  {relatorio.fichasMenosCustos.map((ficha) => (
+                  {relatorio.fichasMenosCustos.map((ficha: any) => (
                     <TableRow key={ficha.id}>
                       <TableCell>
                         <Link href={`/fichas-tecnicas/${ficha.id}`} className="text-blue-600 hover:underline">
@@ -325,14 +383,14 @@ export default function RelatoriosPage() {
   };
   
   const renderizarRelatorioIngredientes = () => {
-    const relatorio = gerarRelatorioIngredientes();
+    const relatorio = dadosRelatorio;
     
     return (
       <div className="space-y-6">
         <Card title="Ingredientes Mais Utilizados">
           {relatorio.ingredientesMaisUsados.length > 0 ? (
             <Table headers={['Ingrediente', 'Quantidade Total', 'Presente em']}>
-              {relatorio.ingredientesMaisUsados.map((ingrediente) => (
+              {relatorio.ingredientesMaisUsados.map((ingrediente: any) => (
                 <TableRow key={ingrediente.id}>
                   <TableCell>{ingrediente.nome}</TableCell>
                   <TableCell>{ingrediente.quantidade} {ingrediente.unidade}</TableCell>
@@ -348,9 +406,9 @@ export default function RelatoriosPage() {
         <Card title="Distribuição de Categorias de Produtos">
           {relatorio.distribuicaoCategoriasProdutos.length > 0 ? (
             <Table headers={['Categoria', 'Quantidade', 'Percentual']}>
-              {relatorio.distribuicaoCategoriasProdutos.map((categoria) => {
+              {relatorio.distribuicaoCategoriasProdutos.map((categoria: any) => {
                 const totalProdutos = relatorio.distribuicaoCategoriasProdutos.reduce(
-                  (total, cat) => total + cat.quantidade, 0
+                  (total: number, cat: any) => total + cat.quantidade, 0
                 );
                 return (
                   <TableRow key={categoria.categoria}>
@@ -372,13 +430,13 @@ export default function RelatoriosPage() {
   };
 
   const renderizarRelatorioEstoque = () => {
-    const relatorio = gerarRelatorioEstoque();
+    const relatorio = dadosRelatorio;
     return (
       <div className="space-y-6">
         <Card title="Estoque Atual">
           {relatorio.itens.length > 0 ? (
             <Table headers={['Produto', 'Quantidade', 'Preço', 'Valor Total']}>
-              {relatorio.itens.map(item => (
+              {relatorio.itens.map((item: any) => (
                 <TableRow key={item.id}>
                   <TableCell>{item.nome}</TableCell>
                   <TableCell>{item.quantidade}</TableCell>
@@ -397,7 +455,7 @@ export default function RelatoriosPage() {
   };
   
   const renderizarRelatorioReceitas = () => {
-    const relatorio = gerarRelatorioReceitas();
+    const relatorio = dadosRelatorio;
     
     return (
       <div className="space-y-6">
@@ -411,7 +469,7 @@ export default function RelatoriosPage() {
         <Card title="Distribuição de Categorias de Receitas">
           {relatorio.distribuicaoCategoriasReceitas.length > 0 ? (
             <Table headers={['Categoria', 'Quantidade', 'Percentual']}>
-              {relatorio.distribuicaoCategoriasReceitas.map((categoria) => (
+              {relatorio.distribuicaoCategoriasReceitas.map((categoria: any) => (
                 <TableRow key={categoria.categoria}>
                   <TableCell>{categoria.categoria}</TableCell>
                   <TableCell>{categoria.quantidade}</TableCell>
