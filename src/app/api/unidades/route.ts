@@ -3,6 +3,10 @@ import { prisma } from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
+  if (process.env.NEXT_PHASE === 'phase-production-build') {
+    return NextResponse.json({ error: 'Database not available during build' }, { status: 503 });
+  }
+  
   try {
     await requireAuth(req);
     
@@ -21,6 +25,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  if (process.env.NEXT_PHASE === 'phase-production-build') {
+    return NextResponse.json({ error: 'Database not available during build' }, { status: 503 });
+  }
+  
   try {
     await requireAuth(req);
     

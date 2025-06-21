@@ -4,6 +4,10 @@ import { requireAuth } from '@/lib/auth';
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
+    if (process.env.NEXT_PHASE === 'phase-production-build') {
+      return NextResponse.json({ error: 'Database not available during build' }, { status: 503 });
+    }
+    
     await requireAuth(req);
     
     const produto = await prisma.produto.findUnique({
@@ -30,6 +34,10 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   try {
+    if (process.env.NEXT_PHASE === 'phase-production-build') {
+      return NextResponse.json({ error: 'Database not available during build' }, { status: 503 });
+    }
+    
     await requireAuth(req);
     
     const data = await req.json();
@@ -65,6 +73,10 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   try {
+    if (process.env.NEXT_PHASE === 'phase-production-build') {
+      return NextResponse.json({ error: 'Database not available during build' }, { status: 503 });
+    }
+    
     await requireAuth(req);
     
     await prisma.produto.delete({

@@ -4,6 +4,10 @@ import { requireAuth } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
   try {
+    if (process.env.NEXT_PHASE === 'phase-production-build') {
+      return NextResponse.json({ error: 'Database not available during build' }, { status: 503 });
+    }
+    
     const user = await requireAuth(req);
     
     const movimentacoes = await prisma.estoqueMovimentacao.findMany({
@@ -31,6 +35,10 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    if (process.env.NEXT_PHASE === 'phase-production-build') {
+      return NextResponse.json({ error: 'Database not available during build' }, { status: 503 });
+    }
+    
     const user = await requireAuth(req);
     
     const data = await req.json();
