@@ -88,11 +88,11 @@ export const obterFichasTecnicas = (): FichaTecnicaInfo[] => {
 
 // Calcular peso total dos ingredientes em gramas
 export const calcularPesoIngredientes = (
-  ingredientes: Omit<IngredienteFicha, 'custo' | 'id'>[]
+  ingredientes: Omit<IngredienteFicha, 'custo' | 'id'>[],
+  produtos: ProdutoInfo[]
 ) => {
-  const todosProdutos = obterProdutos();
   return ingredientes.reduce((total, ingrediente) => {
-    const produto = todosProdutos.find((p: ProdutoInfo) => p.id === ingrediente.produtoId);
+    const produto = produtos.find((p: ProdutoInfo) => p.id === ingrediente.produtoId);
     if (!produto) return total;
 
     const unidadeIng: string = (ingrediente as any).unidade || produto.unidadeMedida;
@@ -116,17 +116,17 @@ export const calcularPesoIngredientes = (
 
 export const calcularRendimentoTotal = (
   ingredientes: Omit<IngredienteFicha, 'custo' | 'id'>[],
-  unidade: string
+  unidade: string,
+  produtos: ProdutoInfo[]
 ) => {
   const tipoRend = infoUnidades[unidade]?.tipo;
   if (tipoRend === 'peso' || tipoRend === 'volume') {
-    const totalG = calcularPesoIngredientes(ingredientes);
+    const totalG = calcularPesoIngredientes(ingredientes, produtos);
     const base = tipoRend === 'peso' ? 'g' : 'ml';
     return converterUnidade(totalG, base, unidade);
   }
-  const todosProdutos = obterProdutos();
   return ingredientes.reduce((tot, ing) => {
-    const prod = todosProdutos.find(p => p.id === ing.produtoId);
+    const prod = produtos.find(p => p.id === ing.produtoId);
     const unidadeIng: string = (ing as any).unidade || prod?.unidadeMedida || 'un';
     const qtd = converterUnidade(ing.quantidade, unidadeIng, unidade);
     return tot + qtd;
@@ -137,14 +137,15 @@ export const calcularRendimentoTotal = (
 export const useFichasTecnicas = () => {
   const [fichasTecnicas, setFichasTecnicas] = useState<FichaTecnicaInfo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [produtosCache, setProdutosCache] = useState<ProdutoInfo[]>([]);
 
   // Calcular custo dos ingredientes
   function calcularCustoIngredientes(
-    ingredientes: Omit<IngredienteFicha, 'custo' | 'id'>[]
+    ingredientes: Omit<IngredienteFicha, 'custo' | 'id'>[],
+    produtos: ProdutoInfo[]
   ) {
-    const todosProdutos = obterProdutos();
     return ingredientes.map((ingrediente: Omit<IngredienteFicha, 'custo' | 'id'>) => {
-      const produto = todosProdutos.find((p: ProdutoInfo) => p.id === ingrediente.produtoId);
+      const produto = produtos.find((p: ProdutoInfo) => p.id === ingrediente.produtoId);
       if (!produto) {
         return {
           ...ingrediente,
@@ -187,7 +188,8 @@ export const useFichasTecnicas = () => {
   // Calcular informações nutricionais
   function calcularInfoNutricional(
     ingredientes: IngredienteFicha[],
-    rendimentoTotal: number
+    rendimentoTotal: number,
+    produtos: ProdutoInfo[]
   ) {
     // Inicializar com zeros
     const infoTotal: InfoNutricionalFicha = {
@@ -202,9 +204,8 @@ export const useFichasTecnicas = () => {
     };
 
     // Somar valores nutricionais de cada ingrediente
-    const todosProdutos = obterProdutos();
     ingredientes.forEach((ingrediente: IngredienteFicha) => {
-      const produto = todosProdutos.find((p: ProdutoInfo) => p.id === ingrediente.produtoId);
+      const produto = produtos.find((p: ProdutoInfo) => p.id === ingrediente.produtoId);
       if (produto?.infoNutricional) {
         const unidadeIng: string = (ingrediente as any).unidade || produto.unidadeMedida;
         const tipoIng = infoUnidades[unidadeIng]?.tipo;
@@ -255,6 +256,8 @@ export const useFichasTecnicas = () => {
   // Carregar fichas técnicas do localStorage ao inicializar e atualizar custos
   useEffect(() => {
     const armazenadas = obterFichasTecnicas();
+    const produtos = obterProdutos();
+    setProdutosCache(produtos);
     const atualizadas = armazenadas.map((f: any) => {
         const baseIngredientes = f.ingredientes.map((i: any) => ({
           produtoId: i.produtoId,
@@ -262,11 +265,12 @@ export const useFichasTecnicas = () => {
           unidade: (i as any).unidade || '',
         })) as Omit<IngredienteFicha, 'custo' | 'id'>[];
 
-      const ingredientesComCusto = calcularCustoIngredientes(baseIngredientes);
-      const pesoTotal = calcularPesoIngredientes(baseIngredientes);
+      const ingredientesComCusto = calcularCustoIngredientes(baseIngredientes, produtos);
+      const pesoTotal = calcularPesoIngredientes(baseIngredientes, produtos);
       const rendimentoTotal = calcularRendimentoTotal(
         baseIngredientes,
-        f.unidadeRendimento
+        f.unidadeRendimento,
+        produtos
       );
       const custoTotal = ingredientesComCusto.reduce(
         (total: number, ing: IngredienteFicha) => total + ing.custo,
@@ -277,7 +281,8 @@ export const useFichasTecnicas = () => {
 
       const { infoTotal, infoPorcao } = calcularInfoNutricional(
         ingredientesComCusto,
-        rendimentoTotal
+        rendimentoTotal,
+        produtos
       );
 
       return {
@@ -300,11 +305,12 @@ export const useFichasTecnicas = () => {
   // Adicionar nova ficha técnica
   const adicionarFichaTecnica = (ficha: Omit<FichaTecnicaInfo, 'id' | 'custoTotal' | 'custoPorcao' | 'infoNutricional' | 'infoNutricionalPorcao' | 'dataCriacao' | 'dataModificacao'>) => {
     // Calcular custo dos ingredientes
-    const ingredientesComCusto = calcularCustoIngredientes(ficha.ingredientes);
-    const pesoTotal = calcularPesoIngredientes(ficha.ingredientes);
+    const ingredientesComCusto = calcularCustoIngredientes(ficha.ingredientes, produtosCache);
+    const pesoTotal = calcularPesoIngredientes(ficha.ingredientes, produtosCache);
     const rendimentoTotal = calcularRendimentoTotal(
       ficha.ingredientes,
-      ficha.unidadeRendimento
+      ficha.unidadeRendimento,
+      produtosCache
     );
     
     // Calcular custo total
@@ -322,7 +328,8 @@ export const useFichasTecnicas = () => {
     // Calcular informações nutricionais
     const { infoTotal, infoPorcao } = calcularInfoNutricional(
       ingredientesComCusto,
-      rendimentoTotal
+      rendimentoTotal,
+      produtosCache
     );
     
     const dataAtual = new Date().toISOString();
@@ -350,11 +357,12 @@ export const useFichasTecnicas = () => {
   // Atualizar ficha técnica existente
   const atualizarFichaTecnica = (id: string, ficha: Omit<FichaTecnicaInfo, 'id' | 'custoTotal' | 'custoPorcao' | 'infoNutricional' | 'infoNutricionalPorcao' | 'dataCriacao' | 'dataModificacao'>) => {
     // Calcular custo dos ingredientes
-    const ingredientesComCusto = calcularCustoIngredientes(ficha.ingredientes);
-    const pesoTotal = calcularPesoIngredientes(ficha.ingredientes);
+    const ingredientesComCusto = calcularCustoIngredientes(ficha.ingredientes, produtosCache);
+    const pesoTotal = calcularPesoIngredientes(ficha.ingredientes, produtosCache);
     const rendimentoTotal = calcularRendimentoTotal(
       ficha.ingredientes,
-      ficha.unidadeRendimento
+      ficha.unidadeRendimento,
+      produtosCache
     );
     
     // Calcular custo total
@@ -372,7 +380,8 @@ export const useFichasTecnicas = () => {
     // Calcular informações nutricionais
     const { infoTotal, infoPorcao } = calcularInfoNutricional(
       ingredientesComCusto,
-      rendimentoTotal
+      rendimentoTotal,
+      produtosCache
     );
     
     const fichaOriginal = fichasTecnicas.find((f: FichaTecnicaInfo) => f.id === id);
