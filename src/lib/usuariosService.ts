@@ -63,7 +63,7 @@ export const useUsuarios = () => {
     if (typeof window === 'undefined') return null;
     const token = localStorage.getItem('auth_token');
     const userData = localStorage.getItem('user_data');
-    return token && userData ? JSON.parse(userData) : null;
+    return token && userData && userData !== 'undefined' ? JSON.parse(userData) : null;
   });
 
   useEffect(() => {
@@ -73,7 +73,7 @@ export const useUsuarios = () => {
       
       const token = localStorage.getItem('auth_token');
       const userData = localStorage.getItem('user_data');
-      if (token && userData) {
+      if (token && userData && userData !== 'undefined') {
         setUsuarioAtual(JSON.parse(userData));
       }
     };

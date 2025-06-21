@@ -24,10 +24,12 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({
-      id: user.id,
-      nome: user.nome,
-      email: user.email,
-      role: user.role,
+      user: {
+        id: user.id,
+        nome: user.nome,
+        email: user.email,
+        role: user.role
+      },
       token
     });
   } catch (error) {
