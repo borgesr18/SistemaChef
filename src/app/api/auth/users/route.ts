@@ -4,6 +4,10 @@ import { requireRole } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
   try {
+    if (process.env.NEXT_PHASE === 'phase-production-build' || process.env.NODE_ENV === 'production' && !req.headers.get('host')) {
+      return NextResponse.json({ error: 'Database not available during build' }, { status: 503 });
+    }
+
     await ensureAdmin();
     
     await requireRole(req, ['admin']);

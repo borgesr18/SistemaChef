@@ -24,6 +24,10 @@ export const verificarSenha = (senha: string, hash: string) =>
 
 /** Garante que o Admin fixo sempre exista */
 export const ensureAdmin = async () => {
+  if (process.env.NEXT_PHASE === 'phase-production-build') {
+    return;
+  }
+
   const adminExiste = await prisma.usuario.findUnique({
     where: { email: adminEmail }
   });
