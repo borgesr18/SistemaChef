@@ -36,7 +36,7 @@ export const useRelatorios = () => {
   const { calcularEstoqueAtual } = useEstoque();
   
   // Gerar relatório completo
-  const gerarRelatorioCompleto = (): DadosRelatorio => {
+  const gerarRelatorioCompleto = async (): Promise<DadosRelatorio> => {
     // Métricas gerais
     const totalProdutos = produtos.length;
     const totalFichasTecnicas = fichasTecnicas.length;
@@ -120,17 +120,20 @@ export const useRelatorios = () => {
       categoriasProdutos[categoria] += 1;
     });
     
-    const distribuicaoCategoriasProdutos = Object.entries(categoriasProdutos)
-      .map(([categoria, quantidade]: [string, number]) => ({
-        categoria: obterLabelCategoria(categoria),
-        quantidade
-      }))
-      .sort(
+    const distribuicaoCategoriasProdutos = await Promise.all(
+      Object.entries(categoriasProdutos)
+        .map(async ([categoria, quantidade]: [string, number]) => ({
+          categoria: await obterLabelCategoria(categoria),
+          quantidade
+        }))
+    ).then(result => 
+      result.sort(
         (
           a: { quantidade: number },
           b: { quantidade: number }
         ) => b.quantidade - a.quantidade
-      );
+      )
+    );
     
     // Distribuição de categorias de receitas
     const categoriasReceitas: Record<string, number> = {};
@@ -168,8 +171,8 @@ export const useRelatorios = () => {
   };
   
   // Gerar relatório de custos
-  const gerarRelatorioCustos = () => {
-    const relatorioCompleto = gerarRelatorioCompleto();
+  const gerarRelatorioCustos = async () => {
+    const relatorioCompleto = await gerarRelatorioCompleto();
     
     return {
       custoTotalEstoque: relatorioCompleto.custoTotalEstoque,
@@ -180,8 +183,8 @@ export const useRelatorios = () => {
   };
   
   // Gerar relatório de ingredientes
-  const gerarRelatorioIngredientes = () => {
-    const relatorioCompleto = gerarRelatorioCompleto();
+  const gerarRelatorioIngredientes = async () => {
+    const relatorioCompleto = await gerarRelatorioCompleto();
     
     return {
       ingredientesMaisUsados: relatorioCompleto.ingredientesMaisUsados,
@@ -205,8 +208,8 @@ export const useRelatorios = () => {
   };
   
   // Gerar relatório de receitas
-  const gerarRelatorioReceitas = () => {
-    const relatorioCompleto = gerarRelatorioCompleto();
+  const gerarRelatorioReceitas = async () => {
+    const relatorioCompleto = await gerarRelatorioCompleto();
     
     return {
       totalFichasTecnicas: relatorioCompleto.totalFichasTecnicas,

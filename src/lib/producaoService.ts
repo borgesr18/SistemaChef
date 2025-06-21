@@ -28,15 +28,30 @@ const gerarId = () => {
   return Date.now().toString(36) + Math.random().toString(36).substring(2);
 };
 
-const salvarProducoes = (prods: ProducaoInfo[]) => {
-  localStorage.setItem('producoes', JSON.stringify(prods));
+const getAuthToken = (): string | null => {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('auth_token');
 };
 
-const obterProducoes = (): ProducaoInfo[] => {
-  if (typeof window === 'undefined') return [];
+const getAuthHeaders = () => {
+  const token = getAuthToken();
+  return {
+    'Content-Type': 'application/json',
+    ...(token && { 'Authorization': `Bearer ${token}` })
+  };
+};
+
+const obterProducoes = async (): Promise<ProducaoInfo[]> => {
   try {
-    const str = localStorage.getItem('producoes');
-    const arr = str ? JSON.parse(str) : [];
+    const response = await fetch('/api/producao', {
+      headers: getAuthHeaders()
+    });
+    
+    if (!response.ok) {
+      throw new Error('Erro ao buscar produções');
+    }
+    
+    const arr = await response.json();
     return arr.map((p: any) => ({
       custoTotal: 0,
       custoUnitario: 0,
@@ -44,12 +59,12 @@ const obterProducoes = (): ProducaoInfo[] => {
       ...p,
     }));
   } catch (err) {
-    console.error('Erro ao ler produções do localStorage', err);
+    console.error('Erro ao buscar produções da API:', err);
     return [];
   }
 };
 
-const recalcTodas = (
+const recalcTodas = async (
   lista: ProducaoInfo[],
   fichas: FichaTecnicaInfo[]
 ) => {
@@ -85,41 +100,87 @@ export const useProducao = () => {
   const [producoes, setProducoes] = useState<ProducaoInfo[]>([]);
 
   useEffect(() => {
-    const base = obterProducoes();
-    const recalc = recalcTodas(base, fichasTecnicas.length ? fichasTecnicas : obterFichasTecnicas());
-    setProducoes(recalc);
+    const carregarProducoes = async () => {
+      const base = await obterProducoes();
+      const fichasParaCalculo = fichasTecnicas.length ? fichasTecnicas : await obterFichasTecnicas();
+      const recalc = await recalcTodas(base, fichasParaCalculo);
+      setProducoes(recalc);
+    };
+    carregarProducoes();
   }, []);
 
   useEffect(() => {
-    if (!producoes.length) return;
-    const atualizadas = recalcTodas(producoes, fichasTecnicas);
-    setProducoes(atualizadas);
-    salvarProducoes(atualizadas);
+    const atualizarProducoes = async () => {
+      if (!producoes.length) return;
+      const atualizadas = await recalcTodas(producoes, fichasTecnicas);
+      setProducoes(atualizadas);
+    };
+    atualizarProducoes();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fichasTecnicas]);
 
-  const registrarProducao = (dados: Omit<ProducaoInfo, 'id'>) => {
-    const nova: ProducaoInfo = { ...dados, id: gerarId() };
-    const novas = [...producoes, nova];
-    setProducoes(novas);
-    salvarProducoes(novas);
-    return nova;
+  const registrarProducao = async (dados: Omit<ProducaoInfo, 'id'>) => {
+    try {
+      const response = await fetch('/api/producao', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(dados)
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao registrar produção');
+      }
+
+      const nova = await response.json();
+      const novas = [...producoes, nova];
+      setProducoes(novas);
+      return nova;
+    } catch (error) {
+      console.error('Erro ao registrar produção:', error);
+      return null;
+    }
   };
 
-  const atualizarProducao = (id: string, dados: Partial<Omit<ProducaoInfo, 'id'>>) => {
-    const index = producoes.findIndex(p => p.id === id);
-    if (index === -1) return;
-    const atualizada = { ...producoes[index], ...dados } as ProducaoInfo;
-    const novas = [...producoes];
-    novas[index] = atualizada;
-    setProducoes(novas);
-    salvarProducoes(novas);
+  const atualizarProducao = async (id: string, dados: Partial<Omit<ProducaoInfo, 'id'>>) => {
+    try {
+      const response = await fetch(`/api/producao/${id}`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(dados)
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao atualizar produção');
+      }
+
+      const atualizada = await response.json();
+      const novas = producoes.map(p => p.id === id ? atualizada : p);
+      setProducoes(novas);
+      return atualizada;
+    } catch (error) {
+      console.error('Erro ao atualizar produção:', error);
+      return null;
+    }
   };
 
-  const removerProducao = (id: string) => {
-    const novas = producoes.filter(p => p.id !== id);
-    setProducoes(novas);
-    salvarProducoes(novas);
+  const removerProducao = async (id: string) => {
+    try {
+      const response = await fetch(`/api/producao/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao deletar produção');
+      }
+
+      const novas = producoes.filter(p => p.id !== id);
+      setProducoes(novas);
+      return true;
+    } catch (error) {
+      console.error('Erro ao remover produção:', error);
+      return false;
+    }
   };
 
   return { producoes, registrarProducao, atualizarProducao, removerProducao };

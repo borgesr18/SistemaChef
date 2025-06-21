@@ -23,18 +23,33 @@ const hashSenha = (senha: string) => {
   return createHash('sha256').update(senha).digest('hex');
 };
 
-const salvarUsuarios = (usuarios: UsuarioInfo[]) => {
-  localStorage.setItem('usuarios', JSON.stringify(usuarios));
+const getAuthToken = (): string | null => {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('auth_token');
 };
 
-const obterUsuarios = (): UsuarioInfo[] => {
-  if (typeof window === 'undefined') return [];
+const getAuthHeaders = () => {
+  const token = getAuthToken();
+  return {
+    'Content-Type': 'application/json',
+    ...(token && { 'Authorization': `Bearer ${token}` })
+  };
+};
+
+const obterUsuarios = async (): Promise<UsuarioInfo[]> => {
   try {
-    const usuariosString = localStorage.getItem('usuarios');
-    const lista = usuariosString ? JSON.parse(usuariosString) : [];
+    const response = await fetch('/api/auth/users', {
+      headers: getAuthHeaders()
+    });
+    
+    if (!response.ok) {
+      throw new Error('Erro ao buscar usuários');
+    }
+    
+    const lista = await response.json();
     return lista.map((u: any) => ({ role: 'viewer', ...u }));
   } catch (err) {
-    console.error('Erro ao ler usuários do localStorage', err);
+    console.error('Erro ao buscar usuários da API:', err);
     return [];
   }
 };
@@ -43,24 +58,26 @@ const filtrarOculto = (lista: UsuarioInfo[]) =>
   lista.filter(u => !(u.email === adminEmail && u.nome === adminNome));
 
 export const useUsuarios = () => {
-  const [usuarios, setUsuarios] = useState<UsuarioInfo[]>(() =>
-    filtrarOculto(obterUsuarios())
-  );
+  const [usuarios, setUsuarios] = useState<UsuarioInfo[]>([]);
   const [usuarioAtual, setUsuarioAtual] = useState<UsuarioInfo | null>(() => {
     if (typeof window === 'undefined') return null;
-    const armazenados = obterUsuarios();
-    const idLogado = localStorage.getItem('usuarioLogado');
-    return idLogado ? armazenados.find(u => u.id === idLogado) || null : null;
+    const token = localStorage.getItem('auth_token');
+    const userData = localStorage.getItem('user_data');
+    return token && userData ? JSON.parse(userData) : null;
   });
 
   useEffect(() => {
-    const armazenados = obterUsuarios();
-    setUsuarios(filtrarOculto(armazenados));
-    const idLogado = localStorage.getItem('usuarioLogado');
-    if (idLogado) {
-      const encontrado = armazenados.find(u => u.id === idLogado) || null;
-      setUsuarioAtual(encontrado);
-    }
+    const carregarUsuarios = async () => {
+      const armazenados = await obterUsuarios();
+      setUsuarios(filtrarOculto(armazenados));
+      
+      const token = localStorage.getItem('auth_token');
+      const userData = localStorage.getItem('user_data');
+      if (token && userData) {
+        setUsuarioAtual(JSON.parse(userData));
+      }
+    };
+    carregarUsuarios();
   }, []);
 
   const senhaForte = (senha: string) =>
@@ -86,7 +103,6 @@ export const useUsuarios = () => {
       const novo = (await res.json()) as UsuarioInfo;
       const novos = [...usuarios, novo];
       setUsuarios(novos);
-      salvarUsuarios(novos);
       return novo;
     } catch {
       return null;
@@ -102,23 +118,18 @@ export const useUsuarios = () => {
       });
       if (!res.ok) return null;
 
-      const usuario = (await res.json()) as UsuarioInfo;
-      setUsuarioAtual(usuario);
-      localStorage.setItem('usuarioLogado', usuario.id);
+      const { user, token } = await res.json();
+      setUsuarioAtual(user);
+      localStorage.setItem('auth_token', token);
+      localStorage.setItem('user_data', JSON.stringify(user));
 
-      const armazenados = obterUsuarios();
-      if (!armazenados.find(u => u.id === usuario.id)) {
-        const novo: UsuarioInfo = {
-          ...usuario,
-          senhaHash: '',
-          oculto: usuario.email === adminEmail && usuario.nome === adminNome,
-        };
-        const total = [...armazenados, novo];
-        salvarUsuarios(total);
+      const armazenados = await obterUsuarios();
+      if (!armazenados.find(u => u.id === user.id)) {
+        const total = [...armazenados, user];
         setUsuarios(filtrarOculto(total));
       }
 
-      return usuario;
+      return user;
     } catch {
       return null;
     }
@@ -126,48 +137,94 @@ export const useUsuarios = () => {
 
   const logout = () => {
     setUsuarioAtual(null);
-    localStorage.removeItem('usuarioLogado');
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('user_data');
   };
 
-  const removerUsuario = (id: string) => {
-    const total = obterUsuarios().filter(u => u.id !== id);
-    salvarUsuarios(total);
-    setUsuarios(filtrarOculto(total));
-    const idLogado = localStorage.getItem('usuarioLogado');
-    if (idLogado === id) {
-      logout();
+  const removerUsuario = async (id: string) => {
+    try {
+      const response = await fetch(`/api/auth/users/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao deletar usuário');
+      }
+
+      const total = await obterUsuarios();
+      setUsuarios(filtrarOculto(total));
+      
+      if (usuarioAtual?.id === id) {
+        logout();
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Erro ao remover usuário:', error);
+      return false;
     }
   };
 
-  const alterarSenha = (id: string, novaSenha: string) => {
-    const total = obterUsuarios().map(u =>
-      u.id === id ? { ...u, senhaHash: hashSenha(novaSenha) } : u
-    );
-    salvarUsuarios(total);
-    setUsuarios(filtrarOculto(total));
-    if (usuarioAtual?.id === id) {
-      const atualizado = total.find(u => u.id === id) || null;
-      setUsuarioAtual(atualizado);
+  const alterarSenha = async (id: string, novaSenha: string) => {
+    try {
+      const response = await fetch(`/api/auth/users/${id}/password`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ novaSenha })
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao alterar senha');
+      }
+
+      const total = await obterUsuarios();
+      setUsuarios(filtrarOculto(total));
+      
+      if (usuarioAtual?.id === id) {
+        const atualizado = total.find(u => u.id === id) || null;
+        setUsuarioAtual(atualizado);
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Erro ao alterar senha:', error);
+      return false;
     }
   };
 
-  const editarUsuario = (
+  const editarUsuario = async (
     id: string,
     dados: { nome: string; email: string; role: 'admin' | 'editor' | 'viewer' | 'manager' }
   ) => {
-    if (obterUsuarios().some(u => u.email === dados.email && u.id !== id)) return false;
+    try {
+      const usuarios = await obterUsuarios();
+      if (usuarios.some(u => u.email === dados.email && u.id !== id)) return false;
 
-    const total = obterUsuarios().map(u =>
-      u.id === id ? { ...u, nome: dados.nome, email: dados.email, role: dados.role } : u
-    );
-    salvarUsuarios(total);
-    setUsuarios(filtrarOculto(total));
-    if (usuarioAtual?.id === id) {
-      const atualizado = total.find(u => u.id === id) || null;
-      setUsuarioAtual(atualizado);
+      const response = await fetch(`/api/auth/users/${id}`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(dados)
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao editar usuário');
+      }
+
+      const total = await obterUsuarios();
+      setUsuarios(filtrarOculto(total));
+      
+      if (usuarioAtual?.id === id) {
+        const atualizado = total.find(u => u.id === id) || null;
+        setUsuarioAtual(atualizado);
+        localStorage.setItem('user_data', JSON.stringify(atualizado));
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Erro ao editar usuário:', error);
+      return false;
     }
-
-    return true;
   };
 
   return {

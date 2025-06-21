@@ -16,16 +16,32 @@ export interface EstrategiaPreco {
 
 const gerarId = () => Date.now().toString(36) + Math.random().toString(36).substring(2);
 
-const salvar = (dados: EstrategiaPreco[]) => {
-  localStorage.setItem('precosVenda', JSON.stringify(dados));
+const getAuthToken = (): string | null => {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('auth_token');
 };
 
-const ler = (): EstrategiaPreco[] => {
-  if (typeof window === 'undefined') return [];
+const getAuthHeaders = () => {
+  const token = getAuthToken();
+  return {
+    'Content-Type': 'application/json',
+    ...(token && { 'Authorization': `Bearer ${token}` })
+  };
+};
+
+const ler = async (): Promise<EstrategiaPreco[]> => {
   try {
-    const str = localStorage.getItem('precosVenda');
-    return str ? JSON.parse(str) : [];
-  } catch {
+    const response = await fetch('/api/precos', {
+      headers: getAuthHeaders()
+    });
+    
+    if (!response.ok) {
+      throw new Error('Erro ao buscar preços');
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Erro ao buscar preços da API:', error);
     return [];
   }
 };
@@ -34,30 +50,70 @@ export const usePrecosVenda = () => {
   const [estrategias, setEstrategias] = useState<EstrategiaPreco[]>([]);
 
   useEffect(() => {
-    setEstrategias(ler());
+    const carregarEstrategias = async () => {
+      const dados = await ler();
+      setEstrategias(dados);
+    };
+    carregarEstrategias();
   }, []);
 
-  const salvarEstrategia = (dados: Omit<EstrategiaPreco, 'id'>, id?: string) => {
-    const existentes = [...estrategias];
-    if (id) {
-      const idx = existentes.findIndex(e => e.id === id);
-      if (idx !== -1) {
-        existentes[idx] = { ...dados, id };
+  const salvarEstrategia = async (dados: Omit<EstrategiaPreco, 'id'>, id?: string) => {
+    try {
+      if (id) {
+        const response = await fetch(`/api/precos/${id}`, {
+          method: 'PUT',
+          headers: getAuthHeaders(),
+          body: JSON.stringify(dados)
+        });
+
+        if (!response.ok) {
+          throw new Error('Erro ao atualizar estratégia');
+        }
+
+        const atualizada = await response.json();
+        const existentes = estrategias.map(e => e.id === id ? atualizada : e);
         setEstrategias(existentes);
-        salvar(existentes);
-        return;
+        return atualizada;
+      } else {
+        const response = await fetch('/api/precos', {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify(dados)
+        });
+
+        if (!response.ok) {
+          throw new Error('Erro ao criar estratégia');
+        }
+
+        const nova = await response.json();
+        const novas = [...estrategias, nova];
+        setEstrategias(novas);
+        return nova;
       }
+    } catch (error) {
+      console.error('Erro ao salvar estratégia:', error);
+      return null;
     }
-    const nova = { ...dados, id: gerarId() };
-    const novas = [...estrategias, nova];
-    setEstrategias(novas);
-    salvar(novas);
   };
 
-  const removerEstrategia = (id: string) => {
-    const novas = estrategias.filter(e => e.id !== id);
-    setEstrategias(novas);
-    salvar(novas);
+  const removerEstrategia = async (id: string) => {
+    try {
+      const response = await fetch(`/api/precos/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao deletar estratégia');
+      }
+
+      const novas = estrategias.filter(e => e.id !== id);
+      setEstrategias(novas);
+      return true;
+    } catch (error) {
+      console.error('Erro ao remover estratégia:', error);
+      return false;
+    }
   };
 
   const obterPorProducao = (producaoId: string) =>

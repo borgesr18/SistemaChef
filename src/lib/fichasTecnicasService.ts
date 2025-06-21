@@ -67,30 +67,43 @@ const gerarId = () => {
   return Date.now().toString(36) + Math.random().toString(36).substring(2);
 };
 
-// Função para salvar fichas técnicas no localStorage
-export const salvarFichasTecnicas = (fichas: FichaTecnicaInfo[]) => {
-  localStorage.setItem('fichasTecnicas', JSON.stringify(fichas));
+// Função para obter token de autenticação
+const getAuthToken = (): string | null => {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('auth_token');
 };
 
-// Função para obter fichas técnicas do localStorage com fallback
-export const obterFichasTecnicas = (): FichaTecnicaInfo[] => {
-  if (typeof window === 'undefined') return [];
+const getAuthHeaders = () => {
+  const token = getAuthToken();
+  return {
+    'Content-Type': 'application/json',
+    ...(token && { 'Authorization': `Bearer ${token}` })
+  };
+};
 
+// Função para obter fichas técnicas da API
+export const obterFichasTecnicas = async (): Promise<FichaTecnicaInfo[]> => {
   try {
-    const fichasString = localStorage.getItem('fichasTecnicas');
-    const armazenadas = fichasString ? JSON.parse(fichasString) : [];
-    return Array.isArray(armazenadas) ? armazenadas : [];
+    const response = await fetch('/api/fichas-tecnicas', {
+      headers: getAuthHeaders()
+    });
+    
+    if (!response.ok) {
+      throw new Error('Erro ao buscar fichas técnicas');
+    }
+    
+    return await response.json();
   } catch (error) {
-    console.error('Erro ao ler fichas técnicas do localStorage', error);
+    console.error('Erro ao buscar fichas técnicas da API:', error);
     return [];
   }
 };
 
 // Calcular peso total dos ingredientes em gramas
-export const calcularPesoIngredientes = (
+export const calcularPesoIngredientes = async (
   ingredientes: Omit<IngredienteFicha, 'custo' | 'id'>[]
 ) => {
-  const todosProdutos = obterProdutos();
+  const todosProdutos = await obterProdutos();
   return ingredientes.reduce((total, ingrediente) => {
     const produto = todosProdutos.find((p: ProdutoInfo) => p.id === ingrediente.produtoId);
     if (!produto) return total;
@@ -114,19 +127,19 @@ export const calcularPesoIngredientes = (
   }, 0);
 };
 
-export const calcularRendimentoTotal = (
+export const calcularRendimentoTotal = async (
   ingredientes: Omit<IngredienteFicha, 'custo' | 'id'>[],
   unidade: string
 ) => {
   const tipoRend = infoUnidades[unidade]?.tipo;
   if (tipoRend === 'peso' || tipoRend === 'volume') {
-    const totalG = calcularPesoIngredientes(ingredientes);
+    const totalG = await calcularPesoIngredientes(ingredientes);
     const base = tipoRend === 'peso' ? 'g' : 'ml';
     return converterUnidade(totalG, base, unidade);
   }
-  const todosProdutos = obterProdutos();
+  const todosProdutos = await obterProdutos();
   return ingredientes.reduce((tot, ing) => {
-    const prod = todosProdutos.find(p => p.id === ing.produtoId);
+    const prod = todosProdutos.find((p: ProdutoInfo) => p.id === ing.produtoId);
     const unidadeIng: string = (ing as any).unidade || prod?.unidadeMedida || 'un';
     const qtd = converterUnidade(ing.quantidade, unidadeIng, unidade);
     return tot + qtd;
@@ -139,10 +152,10 @@ export const useFichasTecnicas = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   // Calcular custo dos ingredientes
-  function calcularCustoIngredientes(
+  async function calcularCustoIngredientes(
     ingredientes: Omit<IngredienteFicha, 'custo' | 'id'>[]
   ) {
-    const todosProdutos = obterProdutos();
+    const todosProdutos = await obterProdutos();
     return ingredientes.map((ingrediente: Omit<IngredienteFicha, 'custo' | 'id'>) => {
       const produto = todosProdutos.find((p: ProdutoInfo) => p.id === ingrediente.produtoId);
       if (!produto) {
@@ -185,7 +198,7 @@ export const useFichasTecnicas = () => {
 
 
   // Calcular informações nutricionais
-  function calcularInfoNutricional(
+  async function calcularInfoNutricional(
     ingredientes: IngredienteFicha[],
     rendimentoTotal: number
   ) {
@@ -202,7 +215,7 @@ export const useFichasTecnicas = () => {
     };
 
     // Somar valores nutricionais de cada ingrediente
-    const todosProdutos = obterProdutos();
+    const todosProdutos = await obterProdutos();
     ingredientes.forEach((ingrediente: IngredienteFicha) => {
       const produto = todosProdutos.find((p: ProdutoInfo) => p.id === ingrediente.produtoId);
       if (produto?.infoNutricional) {
@@ -252,159 +265,85 @@ export const useFichasTecnicas = () => {
     return { infoTotal, infoPorcao };
   }
 
-  // Carregar fichas técnicas do localStorage ao inicializar e atualizar custos
+  // Carregar fichas técnicas da API ao inicializar
   useEffect(() => {
-    const armazenadas = obterFichasTecnicas();
-    const atualizadas = armazenadas.map((f: any) => {
-        const baseIngredientes = f.ingredientes.map((i: any) => ({
-          produtoId: i.produtoId,
-          quantidade: i.quantidade,
-          unidade: (i as any).unidade || '',
-        })) as Omit<IngredienteFicha, 'custo' | 'id'>[];
-
-      const ingredientesComCusto = calcularCustoIngredientes(baseIngredientes);
-      const pesoTotal = calcularPesoIngredientes(baseIngredientes);
-      const rendimentoTotal = calcularRendimentoTotal(
-        baseIngredientes,
-        f.unidadeRendimento
-      );
-      const custoTotal = ingredientesComCusto.reduce(
-        (total: number, ing: IngredienteFicha) => total + ing.custo,
-        0
-      );
-      const custoPorcao = rendimentoTotal > 0 ? custoTotal / rendimentoTotal : 0;
-      const custoPorKg = pesoTotal > 0 ? custoTotal / (pesoTotal / 1000) : 0;
-
-      const { infoTotal, infoPorcao } = calcularInfoNutricional(
-        ingredientesComCusto,
-        rendimentoTotal
-      );
-
-      return {
-        ...f,
-        ingredientes: ingredientesComCusto,
-        rendimentoTotal,
-        custoTotal,
-        custoPorcao,
-        custoPorKg,
-        infoNutricional: infoTotal,
-        infoNutricionalPorcao: infoPorcao,
-        dataModificacao: f.dataModificacao || f.ultimaAtualizacao || f.dataCriacao,
-      } as FichaTecnicaInfo;
-    });
-    setFichasTecnicas(atualizadas);
-    salvarFichasTecnicas(atualizadas);
-    setIsLoading(false);
+    const carregarFichas = async () => {
+      setIsLoading(true);
+      const armazenadas = await obterFichasTecnicas();
+      setFichasTecnicas(armazenadas);
+      setIsLoading(false);
+    };
+    carregarFichas();
   }, []);
 
   // Adicionar nova ficha técnica
-  const adicionarFichaTecnica = (ficha: Omit<FichaTecnicaInfo, 'id' | 'custoTotal' | 'custoPorcao' | 'infoNutricional' | 'infoNutricionalPorcao' | 'dataCriacao' | 'dataModificacao'>) => {
-    // Calcular custo dos ingredientes
-    const ingredientesComCusto = calcularCustoIngredientes(ficha.ingredientes);
-    const pesoTotal = calcularPesoIngredientes(ficha.ingredientes);
-    const rendimentoTotal = calcularRendimentoTotal(
-      ficha.ingredientes,
-      ficha.unidadeRendimento
-    );
-    
-    // Calcular custo total
-    const custoTotal = ingredientesComCusto.reduce(
-      (total: number, ingrediente: IngredienteFicha) => total + ingrediente.custo,
-      0
-    );
-    
-    // Calcular custo por porção
-    const custoPorcao = rendimentoTotal > 0
-      ? custoTotal / rendimentoTotal
-      : 0;
-    const custoPorKg = pesoTotal > 0 ? custoTotal / (pesoTotal / 1000) : 0;
-    
-    // Calcular informações nutricionais
-    const { infoTotal, infoPorcao } = calcularInfoNutricional(
-      ingredientesComCusto,
-      rendimentoTotal
-    );
-    
-    const dataAtual = new Date().toISOString();
-    
-    const novaFicha: FichaTecnicaInfo = {
-      ...ficha,
-      id: gerarId(),
-      ingredientes: ingredientesComCusto,
-      rendimentoTotal,
-      custoTotal,
-      custoPorcao,
-      custoPorKg,
-      infoNutricional: infoTotal,
-      infoNutricionalPorcao: infoPorcao,
-      dataCriacao: dataAtual,
-      dataModificacao: dataAtual
-    };
-    
-    const novasFichas = [...fichasTecnicas, novaFicha];
-    setFichasTecnicas(novasFichas);
-    salvarFichasTecnicas(novasFichas);
-    return novaFicha;
+  const adicionarFichaTecnica = async (ficha: Omit<FichaTecnicaInfo, 'id' | 'custoTotal' | 'custoPorcao' | 'infoNutricional' | 'infoNutricionalPorcao' | 'dataCriacao' | 'dataModificacao'>) => {
+    try {
+      const response = await fetch('/api/fichas-tecnicas', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(ficha)
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao criar ficha técnica');
+      }
+
+      const novaFicha = await response.json();
+      const novasFichas = [...fichasTecnicas, novaFicha];
+      setFichasTecnicas(novasFichas);
+      return novaFicha;
+    } catch (error) {
+      console.error('Erro ao adicionar ficha técnica:', error);
+      return null;
+    }
   };
 
   // Atualizar ficha técnica existente
-  const atualizarFichaTecnica = (id: string, ficha: Omit<FichaTecnicaInfo, 'id' | 'custoTotal' | 'custoPorcao' | 'infoNutricional' | 'infoNutricionalPorcao' | 'dataCriacao' | 'dataModificacao'>) => {
-    // Calcular custo dos ingredientes
-    const ingredientesComCusto = calcularCustoIngredientes(ficha.ingredientes);
-    const pesoTotal = calcularPesoIngredientes(ficha.ingredientes);
-    const rendimentoTotal = calcularRendimentoTotal(
-      ficha.ingredientes,
-      ficha.unidadeRendimento
-    );
-    
-    // Calcular custo total
-    const custoTotal = ingredientesComCusto.reduce(
-      (total: number, ingrediente: IngredienteFicha) => total + ingrediente.custo,
-      0
-    );
-    
-    // Calcular custo por porção
-    const custoPorcao = rendimentoTotal > 0
-      ? custoTotal / rendimentoTotal
-      : 0;
-    const custoPorKg = pesoTotal > 0 ? custoTotal / (pesoTotal / 1000) : 0;
-    
-    // Calcular informações nutricionais
-    const { infoTotal, infoPorcao } = calcularInfoNutricional(
-      ingredientesComCusto,
-      rendimentoTotal
-    );
-    
-    const fichaOriginal = fichasTecnicas.find((f: FichaTecnicaInfo) => f.id === id);
-    
-    const fichaAtualizada: FichaTecnicaInfo = {
-      ...ficha,
-      id,
-      ingredientes: ingredientesComCusto,
-      rendimentoTotal,
-      custoTotal,
-      custoPorcao,
-      custoPorKg,
-      infoNutricional: infoTotal,
-      infoNutricionalPorcao: infoPorcao,
-      dataCriacao: fichaOriginal?.dataCriacao || new Date().toISOString(),
-      dataModificacao: new Date().toISOString()
-    };
-    
-    const novasFichas = fichasTecnicas.map((f: FichaTecnicaInfo) =>
-      f.id === id ? fichaAtualizada : f
-    );
-    
-    setFichasTecnicas(novasFichas);
-    salvarFichasTecnicas(novasFichas);
-    return fichaAtualizada;
+  const atualizarFichaTecnica = async (id: string, ficha: Omit<FichaTecnicaInfo, 'id' | 'custoTotal' | 'custoPorcao' | 'infoNutricional' | 'infoNutricionalPorcao' | 'dataCriacao' | 'dataModificacao'>) => {
+    try {
+      const response = await fetch(`/api/fichas-tecnicas/${id}`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(ficha)
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao atualizar ficha técnica');
+      }
+
+      const fichaAtualizada = await response.json();
+      const novasFichas = fichasTecnicas.map((f: FichaTecnicaInfo) =>
+        f.id === id ? fichaAtualizada : f
+      );
+      
+      setFichasTecnicas(novasFichas);
+      return fichaAtualizada;
+    } catch (error) {
+      console.error('Erro ao atualizar ficha técnica:', error);
+      return null;
+    }
   };
 
   // Remover ficha técnica
-  const removerFichaTecnica = (id: string) => {
-    const novasFichas = fichasTecnicas.filter((f: FichaTecnicaInfo) => f.id !== id);
-    setFichasTecnicas(novasFichas);
-    salvarFichasTecnicas(novasFichas);
+  const removerFichaTecnica = async (id: string) => {
+    try {
+      const response = await fetch(`/api/fichas-tecnicas/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao deletar ficha técnica');
+      }
+
+      const novasFichas = fichasTecnicas.filter((f: FichaTecnicaInfo) => f.id !== id);
+      setFichasTecnicas(novasFichas);
+      return true;
+    } catch (error) {
+      console.error('Erro ao remover ficha técnica:', error);
+      return false;
+    }
   };
 
   // Obter ficha técnica por ID
