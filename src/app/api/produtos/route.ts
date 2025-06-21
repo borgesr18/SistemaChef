@@ -11,10 +11,6 @@ export async function GET(req: NextRequest) {
     await requireAuth(req);
     
     const produtos = await prisma.produto.findMany({
-      include: {
-        categoriaRef: true,
-        unidadeRef: true
-      },
       orderBy: { nome: 'asc' }
     });
 
