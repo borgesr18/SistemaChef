@@ -70,18 +70,12 @@ export const useUsuarios = () => {
     const carregarUsuarios = async () => {
       const armazenados = await obterUsuarios();
       setUsuarios(filtrarOculto(armazenados));
-      
-      const token = localStorage.getItem('auth_token');
-      const userData = localStorage.getItem('user_data');
-      if (token && userData && userData !== 'undefined') {
-        setUsuarioAtual(JSON.parse(userData));
-      }
     };
     carregarUsuarios();
   }, []);
 
   const senhaForte = (senha: string) =>
-    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/.test(senha);
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{6,}$/.test(senha);
 
   const registrarUsuario = async (dados: {
     nome: string;
