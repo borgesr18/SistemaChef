@@ -1,30 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUsuarios, addUsuario, hashSenha, senhaForte, ensureAdmin } from '@/lib/serverUsuarios';
+import { findByEmail, addUsuario, hashSenha, senhaForte, ensureAdmin } from '@/lib/serverUsuarios';
+import { requireRole } from '@/lib/auth';
 
 export async function POST(req: NextRequest) {
-  ensureAdmin();
+  try {
+    await ensureAdmin();
+    
+    await requireRole(req, ['admin']);
 
-  const { nome, email, senha, role } = await req.json();
+    const { nome, email, senha, role } = await req.json();
 
-  if (getUsuarios().some((u) => u.email === email)) {
-    return NextResponse.json({ error: 'Email já cadastrado' }, { status: 400 });
+    const existingUser = await findByEmail(email);
+    if (existingUser) {
+      return NextResponse.json({ error: 'Email já cadastrado' }, { status: 400 });
+    }
+
+    if (!senhaForte(senha)) {
+      return NextResponse.json({ error: 'Senha fraca' }, { status: 400 });
+    }
+
+    const novo = await addUsuario({
+      nome,
+      email,
+      senhaHash: hashSenha(senha),
+      role: role || 'viewer',
+      oculto: false
+    });
+
+    return NextResponse.json({
+      id: novo.id,
+      nome: novo.nome,
+      email: novo.email,
+      role: novo.role,
+    });
+  } catch (error) {
+    console.error('Register error:', error);
+    if (error instanceof Error && error.message === 'Insufficient permissions') {
+      return NextResponse.json({ error: 'Permissões insuficientes' }, { status: 403 });
+    }
+    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
   }
-
-  if (!senhaForte(senha)) {
-    return NextResponse.json({ error: 'Senha fraca' }, { status: 400 });
-  }
-
-  const novo = addUsuario({
-    nome,
-    email,
-    senhaHash: hashSenha(senha),
-    role: role || 'viewer',
-  });
-
-  return NextResponse.json({
-    id: novo.id,
-    nome: novo.nome,
-    email: novo.email,
-    role: novo.role,
-  });
 }

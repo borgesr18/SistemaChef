@@ -13,17 +13,32 @@ export interface MovimentacaoProducao {
 
 const gerarId = () => Date.now().toString(36) + Math.random().toString(36).substring(2);
 
-const salvarMovimentacoes = (movs: MovimentacaoProducao[]) => {
-  localStorage.setItem('movimentacoesEstoqueProducao', JSON.stringify(movs));
+const getAuthToken = (): string | null => {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('auth_token');
 };
 
-const obterMovimentacoes = (): MovimentacaoProducao[] => {
-  if (typeof window === 'undefined') return [];
+const getAuthHeaders = () => {
+  const token = getAuthToken();
+  return {
+    'Content-Type': 'application/json',
+    ...(token && { 'Authorization': `Bearer ${token}` })
+  };
+};
+
+const obterMovimentacoes = async (): Promise<MovimentacaoProducao[]> => {
   try {
-    const str = localStorage.getItem('movimentacoesEstoqueProducao');
-    return str ? JSON.parse(str) : [];
+    const response = await fetch('/api/estoque-producao', {
+      headers: getAuthHeaders()
+    });
+    
+    if (!response.ok) {
+      throw new Error('Erro ao buscar movimentações de produção');
+    }
+    
+    return await response.json();
   } catch (err) {
-    console.error('Erro ao ler movimentacoes de producao', err);
+    console.error('Erro ao buscar movimentações de produção da API:', err);
     return [];
   }
 };
@@ -33,36 +48,66 @@ export const useEstoqueProducao = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    setMovimentacoes(obterMovimentacoes());
-    setIsLoading(false);
+    const carregarMovimentacoes = async () => {
+      setIsLoading(true);
+      const dados = await obterMovimentacoes();
+      setMovimentacoes(dados);
+      setIsLoading(false);
+    };
+    carregarMovimentacoes();
   }, []);
 
-  const registrarEntrada = (dados: { fichaId: string; quantidade: number; validade?: string }) => {
-    const nova: MovimentacaoProducao = {
-      ...dados,
-      id: gerarId(),
-      data: new Date().toISOString(),
-      tipo: 'entrada',
-      validade: dados.validade,
-    };
-    const novas = [...movimentacoes, nova];
-    setMovimentacoes(novas);
-    salvarMovimentacoes(novas);
-    return nova;
+  const registrarEntrada = async (dados: { fichaId: string; quantidade: number; validade?: string }) => {
+    try {
+      const response = await fetch('/api/estoque-producao', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          ...dados,
+          data: new Date().toISOString(),
+          tipo: 'entrada'
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao registrar entrada de produção');
+      }
+
+      const nova = await response.json();
+      const novas = [...movimentacoes, nova];
+      setMovimentacoes(novas);
+      return nova;
+    } catch (error) {
+      console.error('Erro ao registrar entrada de produção:', error);
+      return null;
+    }
   };
 
-  const registrarSaida = (dados: { fichaId: string; quantidade: number }) => {
-    const nova: MovimentacaoProducao = {
-      ...dados,
-      id: gerarId(),
-      data: new Date().toISOString(),
-      tipo: 'saida',
-      quantidade: -Math.abs(dados.quantidade),
-    };
-    const novas = [...movimentacoes, nova];
-    setMovimentacoes(novas);
-    salvarMovimentacoes(novas);
-    return nova;
+  const registrarSaida = async (dados: { fichaId: string; quantidade: number }) => {
+    try {
+      const response = await fetch('/api/estoque-producao', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          fichaId: dados.fichaId,
+          quantidade: -Math.abs(dados.quantidade),
+          data: new Date().toISOString(),
+          tipo: 'saida'
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao registrar saída de produção');
+      }
+
+      const nova = await response.json();
+      const novas = [...movimentacoes, nova];
+      setMovimentacoes(novas);
+      return nova;
+    } catch (error) {
+      console.error('Erro ao registrar saída de produção:', error);
+      return null;
+    }
   };
 
   const calcularEstoqueAtual = (fichaId: string) =>
@@ -70,20 +115,46 @@ export const useEstoqueProducao = () => {
       .filter(m => m.fichaId === fichaId)
       .reduce((tot, m) => tot + m.quantidade, 0);
 
-  const atualizarMovimentacao = (id: string, dados: Partial<MovimentacaoProducao>) => {
-    const index = movimentacoes.findIndex(m => m.id === id);
-    if (index === -1) return;
-    const atualizado = { ...movimentacoes[index], ...dados } as MovimentacaoProducao;
-    const novas = [...movimentacoes];
-    novas[index] = atualizado;
-    setMovimentacoes(novas);
-    salvarMovimentacoes(novas);
+  const atualizarMovimentacao = async (id: string, dados: Partial<MovimentacaoProducao>) => {
+    try {
+      const response = await fetch(`/api/estoque-producao/${id}`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(dados)
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao atualizar movimentação de produção');
+      }
+
+      const atualizado = await response.json();
+      const novas = movimentacoes.map(m => m.id === id ? atualizado : m);
+      setMovimentacoes(novas);
+      return atualizado;
+    } catch (error) {
+      console.error('Erro ao atualizar movimentação de produção:', error);
+      return null;
+    }
   };
 
-  const removerMovimentacao = (id: string) => {
-    const novas = movimentacoes.filter(m => m.id !== id);
-    setMovimentacoes(novas);
-    salvarMovimentacoes(novas);
+  const removerMovimentacao = async (id: string) => {
+    try {
+      const response = await fetch(`/api/estoque-producao/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao deletar movimentação de produção');
+      }
+
+      const novas = movimentacoes.filter(m => m.id !== id);
+      setMovimentacoes(novas);
+      return true;
+    } catch (error) {
+      console.error('Erro ao remover movimentação de produção:', error);
+      return false;
+    }
   };
 
   return {

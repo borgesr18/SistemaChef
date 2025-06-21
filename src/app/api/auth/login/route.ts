@@ -1,23 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAllUsuarios, hashSenha, ensureAdmin } from '@/lib/serverUsuarios';
+import { findByEmail, verificarSenha, ensureAdmin } from '@/lib/serverUsuarios';
+import { signToken } from '@/lib/auth';
 
 export async function POST(req: NextRequest) {
-  ensureAdmin();
+  try {
+    await ensureAdmin();
 
-  const { email, senha } = await req.json();
+    const { email, senha } = await req.json();
 
-  const user = getAllUsuarios().find(
-    (u) => u.email === email && u.senhaHash === hashSenha(senha)
-  );
+    const user = await findByEmail(email);
+    if (!user || !verificarSenha(senha, user.senhaHash)) {
+      return NextResponse.json({ error: 'Credenciais inválidas' }, { status: 401 });
+    }
 
-  if (!user) {
-    return NextResponse.json({ error: 'Credenciais inválidas' }, { status: 401 });
+    const token = signToken({
+      userId: user.id,
+      email: user.email,
+      role: user.role
+    });
+
+    return NextResponse.json({
+      id: user.id,
+      nome: user.nome,
+      email: user.email,
+      role: user.role,
+      token
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
   }
-
-  return NextResponse.json({
-    id: user.id,
-    nome: user.nome,
-    email: user.email,
-    role: user.role,
-  });
 }

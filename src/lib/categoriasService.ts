@@ -9,17 +9,32 @@ export interface CategoriaInfo {
 
 const gerarId = () => Date.now().toString(36) + Math.random().toString(36).substring(2);
 
-const salvarCategorias = (cats: CategoriaInfo[]) => {
-  localStorage.setItem('categoriasProdutos', JSON.stringify(cats));
+const getAuthToken = (): string | null => {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('auth_token');
 };
 
-const obterCategorias = (): CategoriaInfo[] => {
-  if (typeof window === 'undefined') return [];
+const getAuthHeaders = () => {
+  const token = getAuthToken();
+  return {
+    'Content-Type': 'application/json',
+    ...(token && { 'Authorization': `Bearer ${token}` })
+  };
+};
+
+const obterCategorias = async (): Promise<CategoriaInfo[]> => {
   try {
-    const str = localStorage.getItem('categoriasProdutos');
-    return str ? JSON.parse(str) : [];
+    const response = await fetch('/api/categorias', {
+      headers: getAuthHeaders()
+    });
+    
+    if (!response.ok) {
+      throw new Error('Erro ao buscar categorias');
+    }
+    
+    return await response.json();
   } catch (err) {
-    console.error('Erro ao ler categorias', err);
+    console.error('Erro ao buscar categorias da API:', err);
     return [];
   }
 };
@@ -38,34 +53,91 @@ export const useCategorias = () => {
   const [categorias, setCategorias] = useState<CategoriaInfo[]>([]);
 
   useEffect(() => {
-    let cats = obterCategorias();
-    if (cats.length === 0) {
-      cats = categoriasPadrao;
-      salvarCategorias(cats);
-    }
-    setCategorias(cats);
+    const carregarCategorias = async () => {
+      let cats = await obterCategorias();
+      if (cats.length === 0) {
+        cats = categoriasPadrao;
+        for (const cat of categoriasPadrao) {
+          try {
+            await fetch('/api/categorias', {
+              method: 'POST',
+              headers: getAuthHeaders(),
+              body: JSON.stringify({ nome: cat.nome })
+            });
+          } catch (error) {
+            console.error('Erro ao criar categoria padrão:', error);
+          }
+        }
+      }
+      setCategorias(cats);
+    };
+    carregarCategorias();
   }, []);
 
-  const adicionarCategoria = (nome: string) => {
-    const nova = { id: gerarId(), nome };
-    const novas = [...categorias, nova];
-    setCategorias(novas);
-    salvarCategorias(novas);
-    return nova;
+  const adicionarCategoria = async (nome: string) => {
+    try {
+      const response = await fetch('/api/categorias', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ nome })
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao criar categoria');
+      }
+
+      const nova = await response.json();
+      const novas = [...categorias, nova];
+      setCategorias(novas);
+      return nova;
+    } catch (error) {
+      console.error('Erro ao adicionar categoria:', error);
+      return null;
+    }
   };
 
-  const atualizarCategoria = (id: string, nome: string) => {
-    const atualizadas = categorias.map(c =>
-      c.id === id ? { ...c, nome } : c
-    );
-    setCategorias(atualizadas);
-    salvarCategorias(atualizadas);
+  const atualizarCategoria = async (id: string, nome: string) => {
+    try {
+      const response = await fetch(`/api/categorias/${id}`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ nome })
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao atualizar categoria');
+      }
+
+      const categoriaAtualizada = await response.json();
+      const atualizadas = categorias.map(c =>
+        c.id === id ? categoriaAtualizada : c
+      );
+      setCategorias(atualizadas);
+      return categoriaAtualizada;
+    } catch (error) {
+      console.error('Erro ao atualizar categoria:', error);
+      return null;
+    }
   };
 
-  const removerCategoria = (id: string) => {
-    const filtradas = categorias.filter(c => c.id !== id);
-    setCategorias(filtradas);
-    salvarCategorias(filtradas);
+  const removerCategoria = async (id: string) => {
+    try {
+      const response = await fetch(`/api/categorias/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao deletar categoria');
+      }
+
+      const filtradas = categorias.filter(c => c.id !== id);
+      setCategorias(filtradas);
+      return true;
+    } catch (error) {
+      console.error('Erro ao remover categoria:', error);
+      return false;
+    }
   };
 
   const obterCategoriaPorId = (id: string) => categorias.find(c => c.id === id);
@@ -73,8 +145,9 @@ export const useCategorias = () => {
   return { categorias, adicionarCategoria, atualizarCategoria, removerCategoria, obterCategoriaPorId };
 };
 
-export const obterLabelCategoria = (id: string) => {
+export const obterLabelCategoria = async (id: string) => {
   if (!id) return 'Não informado';
-  const cat = obterCategorias().find(c => c.id === id);
+  const cats = await obterCategorias();
+  const cat = cats.find(c => c.id === id);
   return cat ? cat.nome : id;
 };

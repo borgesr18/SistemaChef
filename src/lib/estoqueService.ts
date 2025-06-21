@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { obterProdutos, salvarProdutos, ProdutoInfo } from './produtosService';
+import { obterProdutos, ProdutoInfo } from './produtosService';
 import {
   useFichasTecnicas,
   FichaTecnicaInfo,
@@ -23,17 +23,32 @@ const gerarId = () => {
   return Date.now().toString(36) + Math.random().toString(36).substring(2);
 };
 
-const salvarMovimentacoes = (movs: MovimentacaoEstoque[]) => {
-  localStorage.setItem('movimentacoesEstoque', JSON.stringify(movs));
+const getAuthToken = (): string | null => {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('auth_token');
 };
 
-const obterMovimentacoes = (): MovimentacaoEstoque[] => {
-  if (typeof window === 'undefined') return [];
+const getAuthHeaders = () => {
+  const token = getAuthToken();
+  return {
+    'Content-Type': 'application/json',
+    ...(token && { 'Authorization': `Bearer ${token}` })
+  };
+};
+
+const obterMovimentacoes = async (): Promise<MovimentacaoEstoque[]> => {
   try {
-    const str = localStorage.getItem('movimentacoesEstoque');
-    return str ? JSON.parse(str) : [];
+    const response = await fetch('/api/estoque', {
+      headers: getAuthHeaders()
+    });
+    
+    if (!response.ok) {
+      throw new Error('Erro ao buscar movimentações');
+    }
+    
+    return await response.json();
   } catch (err) {
-    console.error('Erro ao ler movimentacoes do localStorage', err);
+    console.error('Erro ao buscar movimentações da API:', err);
     return [];
   }
 };
@@ -43,23 +58,36 @@ export const useEstoque = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { fichasTecnicas, atualizarFichaTecnica } = useFichasTecnicas();
 
-  const atualizarProdutoDeEntrada = (mov: MovimentacaoEstoque) => {
+  const atualizarProdutoDeEntrada = async (mov: MovimentacaoEstoque) => {
     if (!mov.preco) return;
-    const produtos = obterProdutos();
-    const atualizados = produtos.map((p: ProdutoInfo) => {
-      if (p.id !== mov.produtoId) return p;
-      const pesoEmb = p.pesoEmbalagem || 1;
-      const precoUnitario = pesoEmb > 0 ? (mov.preco || p.preco) / pesoEmb : 0;
-      return {
-        ...p,
-        preco: mov.preco || p.preco,
-        precoUnitario,
-        fornecedor: mov.fornecedor || p.fornecedor,
-        marca: mov.marca || p.marca,
-      };
-    });
-    salvarProdutos(atualizados);
+    
+    // Atualizar produto via API
+    try {
+      const produtos = await obterProdutos();
+      const produto = produtos.find(p => p.id === mov.produtoId);
+      if (produto) {
+        const pesoEmb = produto.pesoEmbalagem || 1;
+        const precoUnitario = pesoEmb > 0 ? (mov.preco || produto.preco) / pesoEmb : 0;
+        
+        const produtoAtualizado = {
+          ...produto,
+          preco: mov.preco || produto.preco,
+          precoUnitario,
+          fornecedor: mov.fornecedor || produto.fornecedor,
+          marca: mov.marca || produto.marca,
+        };
 
+        await fetch(`/api/produtos/${produto.id}`, {
+          method: 'PUT',
+          headers: getAuthHeaders(),
+          body: JSON.stringify(produtoAtualizado)
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar produto:', error);
+    }
+
+    // Atualizar fichas técnicas que usam este produto
     fichasTecnicas
       .filter((f: FichaTecnicaInfo) =>
         f.ingredientes.some((i: IngredienteFicha) => i.produtoId === mov.produtoId)
@@ -96,104 +124,124 @@ export const useEstoque = () => {
   };
 
   useEffect(() => {
-    const todas = obterMovimentacoes();
-    const filtradas = todas.filter(m => m.fornecedor !== 'Producao');
-    if (filtradas.length !== todas.length) salvarMovimentacoes(filtradas);
-    setMovimentacoes(filtradas);
-    setIsLoading(false);
+    const carregarMovimentacoes = async () => {
+      setIsLoading(true);
+      const todas = await obterMovimentacoes();
+      const filtradas = todas.filter(m => m.fornecedor !== 'Producao');
+      setMovimentacoes(filtradas);
+      setIsLoading(false);
+    };
+    carregarMovimentacoes();
   }, []);
 
-  const registrarEntrada = (dados: {
+  const registrarEntrada = async (dados: {
     produtoId: string;
     quantidade: number;
     preco: number;
     fornecedor: string;
     marca?: string;
   }) => {
-    const nova: MovimentacaoEstoque = { ...dados, id: gerarId(), data: new Date().toISOString(), tipo: 'entrada' };
-    const novas = [...movimentacoes, nova];
-    setMovimentacoes(novas);
-    salvarMovimentacoes(novas);
-
-    // Atualizar produto com novo preco/fornecedor/marca
-    const produtos = obterProdutos();
-    const atualizados = produtos.map((p: ProdutoInfo) => {
-      if (p.id !== nova.produtoId) return p;
-      const pesoEmb = p.pesoEmbalagem || 1;
-      const precoUnitario = pesoEmb > 0 ? dados.preco / pesoEmb : 0;
-      return {
-        ...p,
-        preco: dados.preco,
-        precoUnitario,
-        fornecedor: nova.fornecedor as string,
-        marca: nova.marca || p.marca,
-      };
-    });
-    salvarProdutos(atualizados);
-
-    // Atualizar fichas tecnicas que utilizam este produto
-    fichasTecnicas
-      .filter((f: FichaTecnicaInfo) =>
-        f.ingredientes.some((i: IngredienteFicha) => i.produtoId === nova.produtoId)
-      )
-      .forEach((f: FichaTecnicaInfo) => {
-        const dadosFicha = {
-          nome: f.nome,
-          descricao: f.descricao,
-          categoria: f.categoria,
-          ingredientes: f.ingredientes.map(
-            (i: IngredienteFicha) => ({
-              produtoId: i.produtoId,
-              quantidade: i.quantidade,
-              unidade: i.unidade,
-            })
-          ) as Omit<IngredienteFicha, 'custo' | 'id'>[],
-          modoPreparo: f.modoPreparo,
-          tempoPreparo: f.tempoPreparo,
-          rendimentoTotal: f.rendimentoTotal,
-          unidadeRendimento: f.unidadeRendimento,
-          observacoes: f.observacoes || ''
-        } as Omit<
-          FichaTecnicaInfo,
-          'id' | 'custoTotal' | 'custoPorcao' | 'infoNutricional' | 'infoNutricionalPorcao' | 'dataCriacao' | 'dataModificacao'
-        >;
-        atualizarFichaTecnica(f.id, dadosFicha);
+    try {
+      const response = await fetch('/api/estoque', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          ...dados,
+          data: new Date().toISOString(),
+          tipo: 'entrada'
+        })
       });
 
-    return nova;
-  };
+      if (!response.ok) {
+        throw new Error('Erro ao registrar entrada');
+      }
 
-  const registrarSaida = (dados: { produtoId: string; quantidade: number }) => {
-    const nova: MovimentacaoEstoque = {
-      id: gerarId(),
-      data: new Date().toISOString(),
-      tipo: 'saida',
-      produtoId: dados.produtoId,
-      quantidade: -Math.abs(dados.quantidade)
-    };
-    const novas = [...movimentacoes, nova];
-    setMovimentacoes(novas);
-    salvarMovimentacoes(novas);
-    return nova;
-  };
+      const nova = await response.json();
+      const novas = [...movimentacoes, nova];
+      setMovimentacoes(novas);
 
-  const atualizarMovimentacao = (id: string, dados: Partial<MovimentacaoEstoque>) => {
-    const index = movimentacoes.findIndex(m => m.id === id);
-    if (index === -1) return;
-    const atualizado = { ...movimentacoes[index], ...dados } as MovimentacaoEstoque;
-    const novas = [...movimentacoes];
-    novas[index] = atualizado;
-    setMovimentacoes(novas);
-    salvarMovimentacoes(novas);
-    if (atualizado.tipo === 'entrada') {
-      atualizarProdutoDeEntrada(atualizado);
+      // Atualizar produto com novo preço/fornecedor/marca
+      await atualizarProdutoDeEntrada(nova);
+
+      return nova;
+    } catch (error) {
+      console.error('Erro ao registrar entrada:', error);
+      return null;
     }
   };
 
-  const removerMovimentacao = (id: string) => {
-    const novas = movimentacoes.filter(m => m.id !== id);
-    setMovimentacoes(novas);
-    salvarMovimentacoes(novas);
+  const registrarSaida = async (dados: { produtoId: string; quantidade: number }) => {
+    try {
+      const response = await fetch('/api/estoque', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          produtoId: dados.produtoId,
+          quantidade: -Math.abs(dados.quantidade),
+          data: new Date().toISOString(),
+          tipo: 'saida'
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao registrar saída');
+      }
+
+      const nova = await response.json();
+      const novas = [...movimentacoes, nova];
+      setMovimentacoes(novas);
+      return nova;
+    } catch (error) {
+      console.error('Erro ao registrar saída:', error);
+      return null;
+    }
+  };
+
+  const atualizarMovimentacao = async (id: string, dados: Partial<MovimentacaoEstoque>) => {
+    try {
+      const response = await fetch(`/api/estoque/${id}`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(dados)
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao atualizar movimentação');
+      }
+
+      const atualizado = await response.json();
+      const novas = movimentacoes.map(m => m.id === id ? atualizado : m);
+      setMovimentacoes(novas);
+      
+      if (atualizado.tipo === 'entrada') {
+        await atualizarProdutoDeEntrada(atualizado);
+      }
+      
+      return atualizado;
+    } catch (error) {
+      console.error('Erro ao atualizar movimentação:', error);
+      return null;
+    }
+  };
+
+  const removerMovimentacao = async (id: string) => {
+    try {
+      const response = await fetch(`/api/estoque/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao deletar movimentação');
+      }
+
+      const novas = movimentacoes.filter(m => m.id !== id);
+      setMovimentacoes(novas);
+      return true;
+    } catch (error) {
+      console.error('Erro ao remover movimentação:', error);
+      return false;
+    }
   };
 
   const obterHistoricoPorProduto = (produtoId: string) =>
