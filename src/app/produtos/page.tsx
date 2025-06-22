@@ -56,7 +56,7 @@ export default function ProdutosPage() {
                 onClick={() => setSelecionado(produto)}
               >
                 <TableCell className="font-medium text-gray-700">{produto.nome}</TableCell>
-                <TableCell>{obterLabelCategoria(produto.categoria)}</TableCell>
+                <TableCell>{obterLabelCategoria(produto.categoria, produto.categoriaRef)}</TableCell>
                 <TableCell>{produto.unidadeMedida}</TableCell>
                 <TableCell>{formatarPreco(produto.preco)}</TableCell>
                 <TableCell>{produto.fornecedor}</TableCell>

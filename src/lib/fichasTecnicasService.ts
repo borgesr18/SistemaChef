@@ -143,55 +143,18 @@ export const calcularRendimentoTotal = (
   }, 0);
 };
 
-// Hook para gerenciar fichas técnicas (client-side only to prevent hydration issues)
+// Hook para gerenciar fichas técnicas (synchronous only)
 export const useFichasTecnicas = () => {
   const [fichasTecnicas, setFichasTecnicas] = useState<FichaTecnicaInfo[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (!mounted) return;
-    
-    let isMounted = true;
-    
-    const loadData = async () => {
-      try {
-        const data = await obterFichasTecnicas();
-        if (isMounted) {
-          setFichasTecnicas(data);
-          setIsLoading(false);
-        }
-      } catch (error) {
-        console.error('Error loading fichas técnicas:', error);
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    loadData();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [mounted]);
-
-  if (!mounted) {
-    return {
-      fichasTecnicas: [],
-      isLoading: true,
-      setFichasTecnicas,
-    };
-  }
+  const [isLoading, setIsLoading] = useState(false);
 
   return {
     fichasTecnicas,
     isLoading,
     setFichasTecnicas,
+    setIsLoading,
+    obterFichaTecnicaPorId: (id: string) => fichasTecnicas.find((f: FichaTecnicaInfo) => f.id === id),
+    calcularRendimentoTotal,
   };
 };
 
@@ -210,7 +173,6 @@ export const adicionarFichaTecnica = async (ficha: Omit<FichaTecnicaInfo, 'id' |
     }
 
     const novaFicha = await response.json();
-    console.log('Ficha técnica criada com sucesso:', novaFicha);
     return novaFicha;
   } catch (error) {
     console.error('Erro ao adicionar ficha técnica:', error);
