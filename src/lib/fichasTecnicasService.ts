@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { ProdutoInfo, obterProdutos } from './produtosService';
 
 // Tipos para fichas técnicas
@@ -84,17 +84,24 @@ const getAuthHeaders = () => {
 // Função para obter fichas técnicas da API
 export const obterFichasTecnicas = async (): Promise<FichaTecnicaInfo[]> => {
   try {
+    console.log('obterFichasTecnicas: Making API request to /api/fichas-tecnicas');
     const response = await fetch('/api/fichas-tecnicas', {
       headers: getAuthHeaders()
     });
     
+    console.log('obterFichasTecnicas: API response status:', response.status, response.ok);
+    
     if (!response.ok) {
-      throw new Error('Erro ao buscar fichas técnicas');
+      const errorText = await response.text();
+      console.error('obterFichasTecnicas: API error response:', errorText);
+      throw new Error(`Erro ao buscar fichas técnicas: ${response.status}`);
     }
     
-    return await response.json();
+    const data = await response.json();
+    console.log('obterFichasTecnicas: API response data:', data);
+    return data;
   } catch (error) {
-    console.error('Erro ao buscar fichas técnicas da API:', error);
+    console.error('obterFichasTecnicas: Error in API call:', error);
     return [];
   }
 };
@@ -142,113 +149,98 @@ export const calcularRendimentoTotal = (
   }, 0);
 };
 
-// Hook para gerenciar fichas técnicas
+// Hook para gerenciar fichas técnicas (synchronous only)
 export const useFichasTecnicas = () => {
   const [fichasTecnicas, setFichasTecnicas] = useState<FichaTecnicaInfo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-
-
-  // Carregar fichas técnicas da API ao inicializar
   useEffect(() => {
-    const carregarFichas = async () => {
-      setIsLoading(true);
-      const armazenadas = await obterFichasTecnicas();
-      setFichasTecnicas(armazenadas);
-      setIsLoading(false);
+    let isMounted = true;
+    
+    obterFichasTecnicas()
+      .then((armazenadas) => {
+        if (isMounted) {
+          setFichasTecnicas(armazenadas);
+          setIsLoading(false);
+        }
+      })
+      .catch((error) => {
+        console.error('Error loading fichas técnicas:', error);
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
     };
-    carregarFichas();
   }, []);
 
-  // Adicionar nova ficha técnica
-  const adicionarFichaTecnicaHook = async (ficha: Omit<FichaTecnicaInfo, 'id' | 'custoTotal' | 'custoPorcao' | 'infoNutricional' | 'infoNutricionalPorcao' | 'dataCriacao' | 'dataModificacao'>) => {
-    try {
-      const response = await fetch('/api/fichas-tecnicas', {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(ficha)
-      });
-
-      if (!response.ok) {
-        const errorData = await response.text();
-        console.error('Erro na resposta da API:', response.status, errorData);
-        throw new Error(`Erro ao criar ficha técnica: ${response.status}`);
-      }
-
-      const novaFicha = await response.json();
-      console.log('Ficha técnica criada com sucesso:', novaFicha);
-      const novasFichas = [...fichasTecnicas, novaFicha];
-      setFichasTecnicas(novasFichas);
-      return novaFicha;
-    } catch (error) {
-      console.error('Erro ao adicionar ficha técnica:', error);
-      return null;
-    }
-  };
-
-  // Atualizar ficha técnica existente
-  const atualizarFichaTecnica = async (id: string, ficha: Omit<FichaTecnicaInfo, 'id' | 'custoTotal' | 'custoPorcao' | 'infoNutricional' | 'infoNutricionalPorcao' | 'dataCriacao' | 'dataModificacao'>) => {
-    try {
-      const response = await fetch(`/api/fichas-tecnicas/${id}`, {
-        method: 'PUT',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(ficha)
-      });
-
-      if (!response.ok) {
-        throw new Error('Erro ao atualizar ficha técnica');
-      }
-
-      const fichaAtualizada = await response.json();
-      const novasFichas = fichasTecnicas.map((f: FichaTecnicaInfo) =>
-        f.id === id ? fichaAtualizada : f
-      );
-      
-      setFichasTecnicas(novasFichas);
-      return fichaAtualizada;
-    } catch (error) {
-      console.error('Erro ao atualizar ficha técnica:', error);
-      return null;
-    }
-  };
-
-  // Remover ficha técnica
-  const removerFichaTecnica = async (id: string) => {
-    try {
-      const response = await fetch(`/api/fichas-tecnicas/${id}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders()
-      });
-
-      if (!response.ok) {
-        throw new Error('Erro ao deletar ficha técnica');
-      }
-
-      const novasFichas = fichasTecnicas.filter((f: FichaTecnicaInfo) => f.id !== id);
-      setFichasTecnicas(novasFichas);
-      return true;
-    } catch (error) {
-      console.error('Erro ao remover ficha técnica:', error);
-      return false;
-    }
-  };
-
-  // Obter ficha técnica por ID
-  const obterFichaTecnicaPorId = (id: string) => {
-    return fichasTecnicas.find((f: FichaTecnicaInfo) => f.id === id);
-  };
-
-  const memoizedFichasTecnicas = useMemo(() => fichasTecnicas, [fichasTecnicas]);
-
   return {
-    fichasTecnicas: memoizedFichasTecnicas,
+    fichasTecnicas,
     isLoading,
-    adicionarFichaTecnica: adicionarFichaTecnicaHook,
-    atualizarFichaTecnica,
-    removerFichaTecnica,
-    obterFichaTecnicaPorId,
-    calcularRendimentoTotal,
+    setFichasTecnicas,
   };
+};
+
+export const adicionarFichaTecnica = async (ficha: Omit<FichaTecnicaInfo, 'id' | 'custoTotal' | 'custoPorcao' | 'infoNutricional' | 'infoNutricionalPorcao' | 'dataCriacao' | 'dataModificacao'>) => {
+  try {
+    const response = await fetch('/api/fichas-tecnicas', {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(ficha)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error('Erro na resposta da API:', response.status, errorData);
+      throw new Error(`Erro ao criar ficha técnica: ${response.status}`);
+    }
+
+    const novaFicha = await response.json();
+    console.log('Ficha técnica criada com sucesso:', novaFicha);
+    return novaFicha;
+  } catch (error) {
+    console.error('Erro ao adicionar ficha técnica:', error);
+    return null;
+  }
+};
+
+export const atualizarFichaTecnica = async (id: string, ficha: Omit<FichaTecnicaInfo, 'id' | 'custoTotal' | 'custoPorcao' | 'infoNutricional' | 'infoNutricionalPorcao' | 'dataCriacao' | 'dataModificacao'>) => {
+  try {
+    const response = await fetch(`/api/fichas-tecnicas/${id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(ficha)
+    });
+
+    if (!response.ok) {
+      throw new Error('Erro ao atualizar ficha técnica');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Erro ao atualizar ficha técnica:', error);
+    return null;
+  }
+};
+
+export const removerFichaTecnica = async (id: string) => {
+  try {
+    const response = await fetch(`/api/fichas-tecnicas/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
+
+    if (!response.ok) {
+      throw new Error('Erro ao deletar ficha técnica');
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Erro ao remover ficha técnica:', error);
+    return false;
+  }
 };
 
 // Dados iniciais para categorias de receitas

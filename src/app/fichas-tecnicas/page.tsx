@@ -8,19 +8,23 @@ import SlideOver from '@/components/ui/SlideOver';
 import {
   useFichasTecnicas,
   FichaTecnicaInfo,
-  obterLabelCategoriaReceita
+  obterLabelCategoriaReceita,
+  removerFichaTecnica
 } from '@/lib/fichasTecnicasService';
 import Link from 'next/link';
 
 export default function FichasTecnicasPage() {
-  const { fichasTecnicas, isLoading, removerFichaTecnica } = useFichasTecnicas();
+  const { fichasTecnicas, isLoading, setFichasTecnicas } = useFichasTecnicas();
 
   const [selecionada, setSelecionada] = useState<FichaTecnicaInfo | null>(null);
 
-  const handleRemover = (id: string) => {
+  const handleRemover = async (id: string) => {
     if (confirm('Tem certeza que deseja remover esta ficha técnica?')) {
-      removerFichaTecnica(id);
-      setSelecionada(null);
+      const success = await removerFichaTecnica(id);
+      if (success) {
+        setFichasTecnicas(prev => prev.filter(f => f.id !== id));
+        setSelecionada(null);
+      }
     }
   };
 

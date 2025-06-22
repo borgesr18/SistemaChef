@@ -7,9 +7,9 @@ import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import Textarea from '@/components/ui/Textarea';
 import Button from '@/components/ui/Button';
-import { useFichasTecnicas, unidadesRendimento, FichaTecnicaInfo, IngredienteFicha, calcularRendimentoTotal } from '@/lib/fichasTecnicasService';
+import { unidadesRendimento, FichaTecnicaInfo, IngredienteFicha, calcularRendimentoTotal, adicionarFichaTecnica } from '@/lib/fichasTecnicasService';
 import { useCategoriasReceita } from '@/lib/categoriasReceitasService';
-import { useProdutos } from '@/lib/produtosService';
+import { useProdutos, ProdutoInfo } from '@/lib/produtosService';
 import { useUnidadesMedida } from '@/lib/unidadesService';
 import Table, { TableRow, TableCell } from '@/components/ui/Table';
 import { useModal } from '@/components/ui/Modal';
@@ -32,7 +32,6 @@ interface FichaTecnicaForm {
 
 export default function NovaFichaTecnicaPage() {
   const router = useRouter();
-  const { adicionarFichaTecnica } = useFichasTecnicas();
   const { produtos } = useProdutos();
   const { unidades } = useUnidadesMedida();
   const { categorias } = useCategoriasReceita();
@@ -67,10 +66,52 @@ export default function NovaFichaTecnicaPage() {
     observacoes: '',
   });
 
+  const calcularRendimentoTotalLocal = (ingredientes: Ingrediente[], unidadeRendimento: string, produtos: ProdutoInfo[]) => {
+    if (!ingredientes.length || !unidadeRendimento || !produtos.length) return 0;
+    
+    const pesoTotal = ingredientes.reduce((total, ingrediente) => {
+      const produto = produtos.find(p => p.id === ingrediente.produtoId);
+      if (!produto) return total;
+      
+      const quantidade = Number(ingrediente.quantidade) || 0;
+      let pesoIngrediente = 0;
+      
+      if (ingrediente.unidade === 'kg') {
+        pesoIngrediente = quantidade * 1000;
+      } else if (ingrediente.unidade === 'g') {
+        pesoIngrediente = quantidade;
+      } else if (ingrediente.unidade === 'l') {
+        pesoIngrediente = quantidade * 1000;
+      } else if (ingrediente.unidade === 'ml') {
+        pesoIngrediente = quantidade;
+      } else if (ingrediente.unidade === 'unidade') {
+        pesoIngrediente = quantidade * (produto.pesoEmbalagem || 0);
+      }
+      
+      return total + pesoIngrediente;
+    }, 0);
+    
+    if (unidadeRendimento === 'porcoes') {
+      return Math.floor(pesoTotal / 150);
+    } else if (unidadeRendimento === 'kg') {
+      return pesoTotal / 1000;
+    } else if (unidadeRendimento === 'g') {
+      return pesoTotal;
+    } else if (unidadeRendimento === 'l') {
+      return pesoTotal / 1000;
+    } else if (unidadeRendimento === 'ml') {
+      return pesoTotal;
+    } else if (unidadeRendimento === 'unidades') {
+      return Math.floor(pesoTotal / 100);
+    }
+    
+    return 0;
+  };
+
   useEffect(() => {
     if (!fichaTecnica.unidadeRendimento || produtos.length === 0) return;
     
-    const total = calcularRendimentoTotal(
+    const total = calcularRendimentoTotalLocal(
       fichaTecnica.ingredientes,
       fichaTecnica.unidadeRendimento,
       produtos
