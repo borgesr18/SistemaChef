@@ -84,24 +84,18 @@ const getAuthHeaders = () => {
 // Função para obter fichas técnicas da API
 export const obterFichasTecnicas = async (): Promise<FichaTecnicaInfo[]> => {
   try {
-    console.log('obterFichasTecnicas: Making API request to /api/fichas-tecnicas');
     const response = await fetch('/api/fichas-tecnicas', {
       headers: getAuthHeaders()
     });
     
-    console.log('obterFichasTecnicas: API response status:', response.status, response.ok);
-    
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('obterFichasTecnicas: API error response:', errorText);
       throw new Error(`Erro ao buscar fichas técnicas: ${response.status}`);
     }
     
     const data = await response.json();
-    console.log('obterFichasTecnicas: API response data:', data);
     return data;
   } catch (error) {
-    console.error('obterFichasTecnicas: Error in API call:', error);
+    console.error('Error loading fichas técnicas:', error);
     return [];
   }
 };
@@ -149,32 +143,50 @@ export const calcularRendimentoTotal = (
   }, 0);
 };
 
-// Hook para gerenciar fichas técnicas (synchronous only)
+// Hook para gerenciar fichas técnicas (client-side only to prevent hydration issues)
 export const useFichasTecnicas = () => {
   const [fichasTecnicas, setFichasTecnicas] = useState<FichaTecnicaInfo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+    
     let isMounted = true;
     
-    obterFichasTecnicas()
-      .then((armazenadas) => {
+    const loadData = async () => {
+      try {
+        const data = await obterFichasTecnicas();
         if (isMounted) {
-          setFichasTecnicas(armazenadas);
+          setFichasTecnicas(data);
           setIsLoading(false);
         }
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error('Error loading fichas técnicas:', error);
         if (isMounted) {
           setIsLoading(false);
         }
-      });
+      }
+    };
+
+    loadData();
 
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [mounted]);
+
+  if (!mounted) {
+    return {
+      fichasTecnicas: [],
+      isLoading: true,
+      setFichasTecnicas,
+    };
+  }
 
   return {
     fichasTecnicas,

@@ -15,7 +15,6 @@ import Link from 'next/link';
 
 export default function FichasTecnicasPage() {
   const { fichasTecnicas, isLoading, setFichasTecnicas } = useFichasTecnicas();
-
   const [selecionada, setSelecionada] = useState<FichaTecnicaInfo | null>(null);
 
   const handleRemover = async (id: string) => {
