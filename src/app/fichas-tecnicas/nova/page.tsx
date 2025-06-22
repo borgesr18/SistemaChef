@@ -70,18 +70,15 @@ export default function NovaFichaTecnicaPage() {
   useEffect(() => {
     if (!fichaTecnica.unidadeRendimento) return;
     
-    const calcularRendimento = async () => {
-      const total = await calcularRendimentoTotal(
-        fichaTecnica.ingredientes,
-        fichaTecnica.unidadeRendimento
-      );
+    calcularRendimentoTotal(
+      fichaTecnica.ingredientes,
+      fichaTecnica.unidadeRendimento
+    ).then(total => {
       setFichaTecnica(prev => ({
         ...prev,
         rendimentoTotal: total ? total.toString() : '0'
       }));
-    };
-    
-    calcularRendimento();
+    });
   }, [fichaTecnica.ingredientes, fichaTecnica.unidadeRendimento]);
 
   const [erros, setErros] = useState<Record<string, string>>({});
