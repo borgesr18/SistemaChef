@@ -27,7 +27,7 @@ export default function DashboardPage() {
       }
     };
     carregarRelatorio();
-  }, [produtos, fichasTecnicas]);
+  }, [gerarRelatorioCompleto]);
   
   const formatarPreco = (preco: number) => {
     return new Intl.NumberFormat('pt-BR', {

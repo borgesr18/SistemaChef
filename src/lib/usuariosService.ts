@@ -92,18 +92,28 @@ export const useUsuarios = () => {
     if (!senhaForte(dados.senha)) return null;
 
     try {
+      console.log('Enviando dados de registro:', { ...dados, senha: '[HIDDEN]' });
+      
       const res = await fetch('/api/auth/register', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(dados),
       });
-      if (!res.ok) return null;
+      
+      const responseData = await res.json();
+      console.log('Resposta da API de registro:', { status: res.status, data: responseData });
+      
+      if (!res.ok) {
+        console.error('Erro no registro:', responseData);
+        return null;
+      }
 
-      const novo = (await res.json()) as UsuarioInfo;
+      const novo = responseData as UsuarioInfo;
       const novos = [...usuarios, novo];
       setUsuarios(novos);
       return novo;
-    } catch {
+    } catch (error) {
+      console.error('Erro ao registrar usuário:', error);
       return null;
     }
   };

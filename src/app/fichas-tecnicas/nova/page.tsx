@@ -69,14 +69,19 @@ export default function NovaFichaTecnicaPage() {
 
   useEffect(() => {
     if (!fichaTecnica.unidadeRendimento) return;
-    const total = calcularRendimentoTotal(
-      fichaTecnica.ingredientes,
-      fichaTecnica.unidadeRendimento
-    );
-    setFichaTecnica(prev => ({
-      ...prev,
-      rendimentoTotal: total ? total.toString() : '0'
-    }));
+    
+    const calcularRendimento = async () => {
+      const total = await calcularRendimentoTotal(
+        fichaTecnica.ingredientes,
+        fichaTecnica.unidadeRendimento
+      );
+      setFichaTecnica(prev => ({
+        ...prev,
+        rendimentoTotal: total ? total.toString() : '0'
+      }));
+    };
+    
+    calcularRendimento();
   }, [fichaTecnica.ingredientes, fichaTecnica.unidadeRendimento]);
 
   const [erros, setErros] = useState<Record<string, string>>({});
@@ -199,7 +204,7 @@ export default function NovaFichaTecnicaPage() {
   };
 
   // Enviar formulário
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validarFormulario()) return;
@@ -207,15 +212,18 @@ export default function NovaFichaTecnicaPage() {
     setIsLoading(true);
     
     try {
-      // Converter valores numéricos
       const fichaTecnicaFormatada = {
         ...fichaTecnica,
-        tempoPreparo: Number(fichaTecnica.tempoPreparo),
+        tempoPreparo: String(fichaTecnica.tempoPreparo),
         rendimentoTotal: Number(fichaTecnica.rendimentoTotal),
       } as unknown as Omit<FichaTecnicaInfo, 'id' | 'custoTotal' | 'custoPorcao' | 'infoNutricional' | 'infoNutricionalPorcao' | 'dataCriacao' | 'dataModificacao'>;
       
-      adicionarFichaTecnica(fichaTecnicaFormatada);
-      router.push('/fichas-tecnicas');
+      const result = await adicionarFichaTecnica(fichaTecnicaFormatada);
+      if (result) {
+        router.push('/fichas-tecnicas');
+      } else {
+        setToast('Erro ao salvar ficha técnica');
+      }
     } catch (error) {
       console.error('Erro ao salvar ficha técnica:', error);
       setToast('Erro ao salvar ficha técnica');

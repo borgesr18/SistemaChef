@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
         descricao: data.descricao,
         categoria: data.categoria,
         modoPreparo: data.modoPreparo,
-        tempoPreparo: data.tempoPreparo,
+        tempoPreparo: data.tempoPreparo.toString(),
         rendimentoTotal: data.rendimentoTotal,
         unidadeRendimento: data.unidadeRendimento,
         custoTotal: data.custoTotal || 0,
