@@ -100,44 +100,40 @@ export const obterFichasTecnicas = async (): Promise<FichaTecnicaInfo[]> => {
 };
 
 // Calcular peso total dos ingredientes em gramas
-export const calcularPesoIngredientes = async (
-  ingredientes: Omit<IngredienteFicha, 'custo' | 'id'>[]
+const calcularPesoIngredientes = (
+  ingredientes: Omit<IngredienteFicha, 'custo' | 'id'>[],
+  todosProdutos: ProdutoInfo[]
 ) => {
-  const todosProdutos = await obterProdutos();
   return ingredientes.reduce((total, ingrediente) => {
     const produto = todosProdutos.find((p: ProdutoInfo) => p.id === ingrediente.produtoId);
     if (!produto) return total;
 
     const unidadeIng: string = (ingrediente as any).unidade || produto.unidadeMedida;
-    const tipoUso = infoUnidades[unidadeIng]?.tipo;
+    const tipoIng = infoUnidades[unidadeIng]?.tipo;
 
-    if (tipoUso === 'peso') {
-      const qtdG = converterUnidade(ingrediente.quantidade, unidadeIng, 'g');
-      return total + qtdG;
+    if (tipoIng === 'peso') {
+      return total + converterUnidade(ingrediente.quantidade, unidadeIng, 'g');
+    } else if (tipoIng === 'volume') {
+      return total + converterUnidade(ingrediente.quantidade, unidadeIng, 'ml');
+    } else {
+      const pesoEmbalagem = produto.pesoEmbalagem || infoUnidades[produto.unidadeMedida]?.fator || 1;
+      const qtdUn = converterUnidade(ingrediente.quantidade, unidadeIng, produto.unidadeMedida);
+      return total + (qtdUn * pesoEmbalagem);
     }
-
-    if (tipoUso === 'volume') {
-      const qtdMl = converterUnidade(ingrediente.quantidade, unidadeIng, 'ml');
-      return total + qtdMl; // aproximar 1ml = 1g
-    }
-
-    const qtdUn = converterUnidade(ingrediente.quantidade, unidadeIng, produto.unidadeMedida);
-    const pesoEmb = produto.pesoEmbalagem || infoUnidades[produto.unidadeMedida]?.fator || 1;
-    return total + qtdUn * pesoEmb;
   }, 0);
 };
 
-export const calcularRendimentoTotal = async (
+export const calcularRendimentoTotal = (
   ingredientes: Omit<IngredienteFicha, 'custo' | 'id'>[],
-  unidade: string
+  unidade: string,
+  todosProdutos: ProdutoInfo[]
 ) => {
   const tipoRend = infoUnidades[unidade]?.tipo;
   if (tipoRend === 'peso' || tipoRend === 'volume') {
-    const totalG = await calcularPesoIngredientes(ingredientes);
+    const totalG = calcularPesoIngredientes(ingredientes, todosProdutos);
     const base = tipoRend === 'peso' ? 'g' : 'ml';
     return converterUnidade(totalG, base, unidade);
   }
-  const todosProdutos = await obterProdutos();
   return ingredientes.reduce((tot, ing) => {
     const prod = todosProdutos.find((p: ProdutoInfo) => p.id === ing.produtoId);
     const unidadeIng: string = (ing as any).unidade || prod?.unidadeMedida || 'un';
@@ -151,119 +147,7 @@ export const useFichasTecnicas = () => {
   const [fichasTecnicas, setFichasTecnicas] = useState<FichaTecnicaInfo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Calcular custo dos ingredientes
-  async function calcularCustoIngredientes(
-    ingredientes: Omit<IngredienteFicha, 'custo' | 'id'>[]
-  ) {
-    const todosProdutos = await obterProdutos();
-    return ingredientes.map((ingrediente: Omit<IngredienteFicha, 'custo' | 'id'>) => {
-      const produto = todosProdutos.find((p: ProdutoInfo) => p.id === ingrediente.produtoId);
-      if (!produto) {
-        return {
-          ...ingrediente,
-          id: gerarId(),
-          custo: 0
-        };
-      }
 
-      const unidadeIng: string = (ingrediente as any).unidade || produto.unidadeMedida;
-      const tipoUso = infoUnidades[unidadeIng]?.tipo;
-      let custo = 0;
-
-      if (tipoUso === 'peso' || tipoUso === 'volume') {
-        const base = tipoUso === 'peso' ? 'g' : 'ml';
-        const qtdBase = converterUnidade(ingrediente.quantidade, unidadeIng, base);
-        const pesoEmbalagem = produto.pesoEmbalagem || infoUnidades[produto.unidadeMedida]?.fator || 1;
-        const custoUnitario =
-          produto.precoUnitario !== undefined
-            ? produto.precoUnitario
-            : produto.preco / pesoEmbalagem;
-        custo = qtdBase * custoUnitario;
-      } else {
-        const quantidadeConvertida = converterUnidade(
-          ingrediente.quantidade,
-          unidadeIng,
-          produto.unidadeMedida
-        );
-        custo = quantidadeConvertida * produto.preco;
-      }
-      
-      return {
-        ...ingrediente,
-        id: gerarId(),
-        custo
-      };
-    });
-  }
-
-
-  // Calcular informações nutricionais
-  async function calcularInfoNutricional(
-    ingredientes: IngredienteFicha[],
-    rendimentoTotal: number
-  ) {
-    // Inicializar com zeros
-    const infoTotal: InfoNutricionalFicha = {
-      calorias: 0,
-      carboidratos: 0,
-      proteinas: 0,
-      gordurasTotais: 0,
-      gordurasSaturadas: 0,
-      gordurasTrans: 0,
-      fibras: 0,
-      sodio: 0
-    };
-
-    // Somar valores nutricionais de cada ingrediente
-    const todosProdutos = await obterProdutos();
-    ingredientes.forEach((ingrediente: IngredienteFicha) => {
-      const produto = todosProdutos.find((p: ProdutoInfo) => p.id === ingrediente.produtoId);
-      if (produto?.infoNutricional) {
-        const unidadeIng: string = (ingrediente as any).unidade || produto.unidadeMedida;
-        const tipoIng = infoUnidades[unidadeIng]?.tipo;
-        let qtdBase = ingrediente.quantidade;
-        let base: string = 'un';
-
-        if (tipoIng === 'peso' || tipoIng === 'volume') {
-          base = tipoIng === 'peso' ? 'g' : 'ml';
-          qtdBase = converterUnidade(ingrediente.quantidade, unidadeIng, base);
-        } else {
-          // unidade para peso/volume usando pesoEmbalagem
-          const pesoEmb = produto.pesoEmbalagem || infoUnidades[produto.unidadeMedida]?.fator || 1;
-          const qtdUn = converterUnidade(ingrediente.quantidade, unidadeIng, produto.unidadeMedida);
-          base = infoUnidades[produto.unidadeMedida]?.tipo === 'volume' ? 'ml' : 'g';
-          qtdBase = qtdUn * pesoEmb;
-        }
-
-        const proporcao = qtdBase / 100;
-        
-        infoTotal.calorias += produto.infoNutricional.calorias * proporcao;
-        infoTotal.carboidratos += produto.infoNutricional.carboidratos * proporcao;
-        infoTotal.proteinas += produto.infoNutricional.proteinas * proporcao;
-        infoTotal.gordurasTotais += produto.infoNutricional.gordurasTotais * proporcao;
-        infoTotal.gordurasSaturadas += produto.infoNutricional.gordurasSaturadas * proporcao;
-        infoTotal.gordurasTrans += produto.infoNutricional.gordurasTrans * proporcao;
-        infoTotal.fibras += produto.infoNutricional.fibras * proporcao;
-        infoTotal.sodio += produto.infoNutricional.sodio * proporcao;
-      }
-    });
-
-    // Calcular valores por porção
-    const divisor = rendimentoTotal > 0 ? rendimentoTotal : 1;
-
-    const infoPorcao: InfoNutricionalFicha = {
-      calorias: infoTotal.calorias / divisor,
-      carboidratos: infoTotal.carboidratos / divisor,
-      proteinas: infoTotal.proteinas / divisor,
-      gordurasTotais: infoTotal.gordurasTotais / divisor,
-      gordurasSaturadas: infoTotal.gordurasSaturadas / divisor,
-      gordurasTrans: infoTotal.gordurasTrans / divisor,
-      fibras: infoTotal.fibras / divisor,
-      sodio: infoTotal.sodio / divisor
-    };
-
-    return { infoTotal, infoPorcao };
-  }
 
   // Carregar fichas técnicas da API ao inicializar
   useEffect(() => {

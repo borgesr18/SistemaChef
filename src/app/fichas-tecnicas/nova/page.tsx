@@ -68,18 +68,18 @@ export default function NovaFichaTecnicaPage() {
   });
 
   useEffect(() => {
-    if (!fichaTecnica.unidadeRendimento) return;
+    if (!fichaTecnica.unidadeRendimento || produtos.length === 0) return;
     
-    calcularRendimentoTotal(
+    const total = calcularRendimentoTotal(
       fichaTecnica.ingredientes,
-      fichaTecnica.unidadeRendimento
-    ).then(total => {
-      setFichaTecnica(prev => ({
-        ...prev,
-        rendimentoTotal: total ? total.toString() : '0'
-      }));
-    });
-  }, [fichaTecnica.ingredientes, fichaTecnica.unidadeRendimento]);
+      fichaTecnica.unidadeRendimento,
+      produtos
+    );
+    setFichaTecnica(prev => ({
+      ...prev,
+      rendimentoTotal: total ? total.toString() : '0'
+    }));
+  }, [fichaTecnica.ingredientes, fichaTecnica.unidadeRendimento, produtos]);
 
   const [erros, setErros] = useState<Record<string, string>>({});
 
