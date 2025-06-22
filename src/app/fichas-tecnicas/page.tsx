@@ -19,28 +19,18 @@ export default function FichasTecnicasPage() {
   const [selecionada, setSelecionada] = useState<FichaTecnicaInfo | null>(null);
   
   useEffect(() => {
-    let isMounted = true;
-    
     setIsLoading(true);
     
     obterFichasTecnicas()
       .then((data) => {
-        if (isMounted) {
-          setFichasTecnicas(data || []);
-          setIsLoading(false);
-        }
+        setFichasTecnicas(data || []);
+        setIsLoading(false);
       })
       .catch((error) => {
         console.error('Erro ao carregar fichas técnicas:', error);
-        if (isMounted) {
-          setFichasTecnicas([]);
-          setIsLoading(false);
-        }
+        setFichasTecnicas([]);
+        setIsLoading(false);
       });
-    
-    return () => {
-      isMounted = false;
-    };
   }, []);
 
   const handleRemover = async (id: string) => {
