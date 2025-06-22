@@ -1,5 +1,6 @@
 'use client';
 
+import { useCallback } from 'react';
 import { useProdutos, ProdutoInfo } from './produtosService';
 import { obterLabelCategoria } from './categoriasService';
 import { useEstoque } from './estoqueService';
@@ -36,7 +37,7 @@ export const useRelatorios = () => {
   const { calcularEstoqueAtual } = useEstoque();
   
   // Gerar relatório completo
-  const gerarRelatorioCompleto = async (): Promise<DadosRelatorio> => {
+  const gerarRelatorioCompleto = useCallback(async (): Promise<DadosRelatorio> => {
     // Métricas gerais
     const totalProdutos = produtos.length;
     const totalFichasTecnicas = fichasTecnicas.length;
@@ -168,7 +169,7 @@ export const useRelatorios = () => {
       distribuicaoCategoriasProdutos,
       distribuicaoCategoriasReceitas
     };
-  };
+  }, [produtos, fichasTecnicas, calcularEstoqueAtual]);
   
   // Gerar relatório de custos
   const gerarRelatorioCustos = async () => {

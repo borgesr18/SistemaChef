@@ -7,18 +7,32 @@ export interface CategoriaReceitaInfo {
   nome: string;
 }
 
-const gerarId = () => Date.now().toString(36) + Math.random().toString(36).substring(2);
-
-const salvar = (cats: CategoriaReceitaInfo[]) => {
-  localStorage.setItem('categoriasReceitas', JSON.stringify(cats));
+const getAuthToken = (): string | null => {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('auth_token');
 };
 
-const obter = (): CategoriaReceitaInfo[] => {
-  if (typeof window === 'undefined') return [];
+const getAuthHeaders = () => {
+  const token = getAuthToken();
+  return {
+    'Content-Type': 'application/json',
+    ...(token && { 'Authorization': `Bearer ${token}` })
+  };
+};
+
+const obter = async (): Promise<CategoriaReceitaInfo[]> => {
   try {
-    const str = localStorage.getItem('categoriasReceitas');
-    return str ? JSON.parse(str) : [];
-  } catch {
+    const response = await fetch('/api/categorias-receitas', {
+      headers: getAuthHeaders()
+    });
+    
+    if (!response.ok) {
+      throw new Error('Erro ao buscar categorias de receitas');
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Erro ao buscar categorias de receitas:', error);
     return [];
   }
 };
@@ -37,32 +51,72 @@ export const useCategoriasReceita = () => {
   const [categorias, setCategorias] = useState<CategoriaReceitaInfo[]>([]);
 
   useEffect(() => {
-    let iniciais = obter();
-    if (iniciais.length === 0) {
-      iniciais = categoriasPadrao;
-      salvar(iniciais);
-    }
-    setCategorias(iniciais);
+    const carregarCategorias = async () => {
+      const categoriasCarregadas = await obter();
+      setCategorias(categoriasCarregadas);
+    };
+    carregarCategorias();
   }, []);
 
-  const adicionar = (nome: string) => {
-    const nova = { id: gerarId(), nome };
-    const novas = [...categorias, nova];
-    setCategorias(novas);
-    salvar(novas);
-    return nova;
+  const adicionar = async (nome: string) => {
+    try {
+      const response = await fetch('/api/categorias-receitas', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ nome })
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao adicionar categoria');
+      }
+
+      const nova = await response.json();
+      setCategorias(prev => [...prev, nova]);
+      return nova;
+    } catch (error) {
+      console.error('Erro ao adicionar categoria:', error);
+      return null;
+    }
   };
 
-  const atualizar = (id: string, nome: string) => {
-    const atualizadas = categorias.map(c => (c.id === id ? { ...c, nome } : c));
-    setCategorias(atualizadas);
-    salvar(atualizadas);
+  const atualizar = async (id: string, nome: string) => {
+    try {
+      const response = await fetch(`/api/categorias-receitas/${id}`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ nome })
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao atualizar categoria');
+      }
+
+      const atualizada = await response.json();
+      setCategorias(prev => prev.map(c => c.id === id ? atualizada : c));
+      return true;
+    } catch (error) {
+      console.error('Erro ao atualizar categoria:', error);
+      return false;
+    }
   };
 
-  const remover = (id: string) => {
-    const filtradas = categorias.filter(c => c.id !== id);
-    setCategorias(filtradas);
-    salvar(filtradas);
+  const remover = async (id: string) => {
+    try {
+      const response = await fetch(`/api/categorias-receitas/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao remover categoria');
+      }
+
+      setCategorias(prev => prev.filter(c => c.id !== id));
+      return true;
+    } catch (error) {
+      console.error('Erro ao remover categoria:', error);
+      return false;
+    }
   };
 
   const obterPorId = (id: string) => categorias.find(c => c.id === id);
@@ -70,8 +124,13 @@ export const useCategoriasReceita = () => {
   return { categorias, adicionar, atualizar, remover, obterPorId };
 };
 
-export const obterLabelCategoriaReceita = (id: string) => {
+export const obterLabelCategoriaReceita = async (id: string) => {
   if (!id) return 'Não informado';
-  const cat = obter().find(c => c.id === id);
-  return cat ? cat.nome : id;
+  try {
+    const categorias = await obter();
+    const cat = categorias.find(c => c.id === id);
+    return cat ? cat.nome : id;
+  } catch {
+    return id;
+  }
 };

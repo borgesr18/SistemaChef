@@ -25,11 +25,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         tipo: data.tipo
       },
       include: {
-        ficha: {
-          include: {
-            categoriaRef: true
-          }
-        }
+        ficha: true
       }
     });
 

@@ -13,15 +13,9 @@ export async function GET(req: NextRequest) {
     const fichasTecnicas = await prisma.fichaTecnica.findMany({
       where: { userId: user.id },
       include: {
-        categoriaRef: true,
         ingredientes: {
           include: {
-            produto: {
-              include: {
-                categoriaRef: true,
-                unidadeRef: true
-              }
-            }
+            produto: true
           }
         }
       },
@@ -71,15 +65,9 @@ export async function POST(req: NextRequest) {
         }
       },
       include: {
-        categoriaRef: true,
         ingredientes: {
           include: {
-            produto: {
-              include: {
-                categoriaRef: true,
-                unidadeRef: true
-              }
-            }
+            produto: true
           }
         }
       }

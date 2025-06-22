@@ -15,7 +15,6 @@ export async function GET(req: NextRequest) {
       include: {
         ficha: {
           include: {
-            categoriaRef: true,
             ingredientes: {
               include: {
                 produto: true
@@ -64,7 +63,7 @@ export async function POST(req: NextRequest) {
       include: {
         ficha: {
           include: {
-            categoriaRef: true,
+
             ingredientes: {
               include: {
                 produto: true
