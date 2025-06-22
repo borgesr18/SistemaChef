@@ -8,8 +8,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Database not available during build' }, { status: 503 });
     }
 
-    await ensureAdmin();
-
     const { email, senha } = await req.json();
 
     const user = await findByEmail(email);

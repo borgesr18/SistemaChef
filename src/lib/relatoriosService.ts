@@ -146,17 +146,18 @@ export const useRelatorios = () => {
       categoriasReceitas[categoria] += 1;
     });
     
-    const distribuicaoCategoriasReceitas = Object.entries(categoriasReceitas)
-      .map(([categoria, quantidade]: [string, number]) => ({
-        categoria: obterLabelCategoriaReceita(categoria),
-        quantidade
-      }))
-      .sort(
-        (
-          a: { quantidade: number },
-          b: { quantidade: number }
-        ) => b.quantidade - a.quantidade
-      );
+    const distribuicaoCategoriasReceitas = (await Promise.all(
+      Object.entries(categoriasReceitas)
+        .map(async ([categoria, quantidade]: [string, number]) => ({
+          categoria: await obterLabelCategoriaReceita(categoria),
+          quantidade
+        }))
+    )).sort(
+      (
+        a: { quantidade: number },
+        b: { quantidade: number }
+      ) => b.quantidade - a.quantidade
+    );
     
     return {
       totalProdutos,
