@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { ProdutoInfo, obterProdutos } from './produtosService';
 
 // Tipos para fichas técnicas
@@ -354,8 +354,10 @@ export const useFichasTecnicas = () => {
     return fichasTecnicas.find((f: FichaTecnicaInfo) => f.id === id);
   };
 
+  const memoizedFichasTecnicas = useMemo(() => fichasTecnicas, [fichasTecnicas]);
+
   return {
-    fichasTecnicas,
+    fichasTecnicas: memoizedFichasTecnicas,
     isLoading,
     adicionarFichaTecnica: adicionarFichaTecnicaHook,
     atualizarFichaTecnica,

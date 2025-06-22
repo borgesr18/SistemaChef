@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { obterProdutos, ProdutoInfo } from './produtosService';
 import {
   useFichasTecnicas,
@@ -247,10 +247,12 @@ export const useEstoque = () => {
   const obterHistoricoPorProduto = (produtoId: string) =>
     movimentacoes.filter((m: MovimentacaoEstoque) => m.produtoId === produtoId);
 
-  const calcularEstoqueAtual = (produtoId: string) =>
+  const calcularEstoqueAtual = useCallback((produtoId: string) =>
     movimentacoes
       .filter((m: MovimentacaoEstoque) => m.produtoId === produtoId)
-      .reduce((total: number, m: MovimentacaoEstoque) => total + m.quantidade, 0);
+      .reduce((total: number, m: MovimentacaoEstoque) => total + m.quantidade, 0),
+    [movimentacoes]
+  );
 
   return {
     movimentacoes,
