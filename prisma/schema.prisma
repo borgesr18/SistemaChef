@@ -34,7 +34,6 @@ model Categoria {
 
   // Relacionamentos
   produtos       Produto[]
-  fichasTecnicas FichaTecnica[]
 
   @@map("categorias")
 }
@@ -90,7 +89,6 @@ model FichaTecnica {
 
   // Relacionamentos
   user               Usuario            @relation(fields: [userId], references: [id])
-  categoriaRef       Categoria?         @relation(fields: [categoria], references: [id])
   ingredientes       IngredienteFicha[]
   producoes          Producao[]
   estoqueProducao    EstoqueProducaoMovimentacao[]

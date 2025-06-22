@@ -9,8 +9,6 @@ export async function POST(req: NextRequest) {
     }
 
     await ensureAdmin();
-    
-    await requireRole(req, ['admin']);
 
     const { nome, email, senha, role } = await req.json();
 

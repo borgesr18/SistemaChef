@@ -16,6 +16,14 @@ export interface ProdutoInfo {
   fornecedor: string;
   pesoEmbalagem?: number;
   imagem?: string;
+  categoriaRef?: {
+    id: string;
+    nome: string;
+  };
+  unidadeRef?: {
+    id: string;
+    nome: string;
+  };
   infoNutricional?: {
     calorias: number;
     carboidratos: number;
@@ -65,6 +73,8 @@ export const obterProdutos = async (): Promise<ProdutoInfo[]> => {
       preco: Number(p.preco) || 0,
       precoUnitario: p.precoUnitario ? Number(p.precoUnitario) : undefined,
       pesoEmbalagem: p.pesoEmbalagem ? Number(p.pesoEmbalagem) : undefined,
+      categoriaRef: p.categoriaRef,
+      unidadeRef: p.unidadeRef,
       infoNutricional: p.infoNutricional
         ? {
             calorias: Number(p.infoNutricional.calorias) || 0,
