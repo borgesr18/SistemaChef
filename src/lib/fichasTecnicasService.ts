@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { ProdutoInfo, obterProdutos } from './produtosService';
 
 // Tipos para fichas técnicas
@@ -277,7 +277,7 @@ export const useFichasTecnicas = () => {
   }, []);
 
   // Adicionar nova ficha técnica
-  const adicionarFichaTecnica = async (ficha: Omit<FichaTecnicaInfo, 'id' | 'custoTotal' | 'custoPorcao' | 'infoNutricional' | 'infoNutricionalPorcao' | 'dataCriacao' | 'dataModificacao'>) => {
+  const adicionarFichaTecnicaHook = async (ficha: Omit<FichaTecnicaInfo, 'id' | 'custoTotal' | 'custoPorcao' | 'infoNutricional' | 'infoNutricionalPorcao' | 'dataCriacao' | 'dataModificacao'>) => {
     try {
       const response = await fetch('/api/fichas-tecnicas', {
         method: 'POST',
@@ -286,10 +286,13 @@ export const useFichasTecnicas = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Erro ao criar ficha técnica');
+        const errorData = await response.text();
+        console.error('Erro na resposta da API:', response.status, errorData);
+        throw new Error(`Erro ao criar ficha técnica: ${response.status}`);
       }
 
       const novaFicha = await response.json();
+      console.log('Ficha técnica criada com sucesso:', novaFicha);
       const novasFichas = [...fichasTecnicas, novaFicha];
       setFichasTecnicas(novasFichas);
       return novaFicha;
@@ -351,10 +354,12 @@ export const useFichasTecnicas = () => {
     return fichasTecnicas.find((f: FichaTecnicaInfo) => f.id === id);
   };
 
+  const memoizedFichasTecnicas = useMemo(() => fichasTecnicas, [fichasTecnicas]);
+
   return {
-    fichasTecnicas,
+    fichasTecnicas: memoizedFichasTecnicas,
     isLoading,
-    adicionarFichaTecnica,
+    adicionarFichaTecnica: adicionarFichaTecnicaHook,
     atualizarFichaTecnica,
     removerFichaTecnica,
     obterFichaTecnicaPorId,

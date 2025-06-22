@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useFichasTecnicas, FichaTecnicaInfo, IngredienteFicha } from './fichasTecnicasService';
 
 // Tipos para produtos
@@ -227,8 +227,10 @@ export const useProdutos = () => {
     return produtos.find((p: ProdutoInfo) => p.id === id);
   };
 
+  const memoizedProdutos = useMemo(() => produtos, [produtos]);
+
   return {
-    produtos,
+    produtos: memoizedProdutos,
     isLoading,
     adicionarProduto,
     atualizarProduto,

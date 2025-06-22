@@ -32,7 +32,11 @@ export default function FichasTecnicasPage() {
   };
 
   const formatarData = (dataString: string) => {
+    if (!dataString) return 'Data não disponível';
+    
     const data = new Date(dataString);
+    if (isNaN(data.getTime())) return 'Data inválida';
+    
     return new Intl.DateTimeFormat('pt-BR', {
       day: '2-digit',
       month: '2-digit',
