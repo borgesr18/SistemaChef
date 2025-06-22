@@ -34,7 +34,6 @@ model Categoria {
 
   // Relacionamentos
   produtos       Produto[]
-  fichasTecnicas FichaTecnica[]
 
   @@map("categorias")
 }
@@ -90,7 +89,6 @@ model FichaTecnica {
 
   // Relacionamentos
   user               Usuario            @relation(fields: [userId], references: [id])
-  categoriaRef       Categoria?         @relation(fields: [categoria], references: [id])
   ingredientes       IngredienteFicha[]
   producoes          Producao[]
   estoqueProducao    EstoqueProducaoMovimentacao[]
@@ -187,4 +185,13 @@ model PrecoVenda {
   updatedAt    DateTime @updatedAt
 
   @@map("precos_venda")
+}
+
+model CategoriaReceita {
+  id        String   @id @default(cuid())
+  nome      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("categorias_receitas")
 }

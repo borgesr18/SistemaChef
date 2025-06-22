@@ -13,11 +13,7 @@ export async function GET(req: NextRequest) {
     const movimentacoes = await prisma.estoqueProducaoMovimentacao.findMany({
       where: { userId: user.id },
       include: {
-        ficha: {
-          include: {
-            categoriaRef: true
-          }
-        }
+        ficha: true
       },
       orderBy: { data: 'desc' }
     });
@@ -52,11 +48,7 @@ export async function POST(req: NextRequest) {
         userId: user.id
       },
       include: {
-        ficha: {
-          include: {
-            categoriaRef: true
-          }
-        }
+        ficha: true
       }
     });
 

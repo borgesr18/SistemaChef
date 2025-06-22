@@ -10,17 +10,17 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     
     await requireAuth(req);
     
-    const produto = await prisma.produto.findUnique({
+    const categoria = await prisma.categoriaReceita.findUnique({
       where: { id: params.id }
     });
 
-    if (!produto) {
-      return NextResponse.json({ error: 'Produto não encontrado' }, { status: 404 });
+    if (!categoria) {
+      return NextResponse.json({ error: 'Categoria não encontrada' }, { status: 404 });
     }
 
-    return NextResponse.json(produto);
+    return NextResponse.json(categoria);
   } catch (error) {
-    console.error('Get produto error:', error);
+    console.error('Get categoria receita error:', error);
     if (error instanceof Error && error.message === 'Authentication required') {
       return NextResponse.json({ error: 'Autenticação necessária' }, { status: 401 });
     }
@@ -36,26 +36,16 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     
     await requireAuth(req);
     
-    const data = await req.json();
+    const { nome } = await req.json();
     
-    const produto = await prisma.produto.update({
+    const categoria = await prisma.categoriaReceita.update({
       where: { id: params.id },
-      data: {
-        nome: data.nome,
-        categoria: data.categoria,
-        marca: data.marca,
-        unidadeMedida: data.unidadeMedida,
-        preco: data.preco,
-        precoUnitario: data.precoUnitario,
-        fornecedor: data.fornecedor,
-        pesoEmbalagem: data.pesoEmbalagem,
-        infoNutricional: data.infoNutricional
-      }
+      data: { nome }
     });
 
-    return NextResponse.json(produto);
+    return NextResponse.json(categoria);
   } catch (error) {
-    console.error('Update produto error:', error);
+    console.error('Update categoria receita error:', error);
     if (error instanceof Error && error.message === 'Authentication required') {
       return NextResponse.json({ error: 'Autenticação necessária' }, { status: 401 });
     }
@@ -71,13 +61,13 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     
     await requireAuth(req);
     
-    await prisma.produto.delete({
+    await prisma.categoriaReceita.delete({
       where: { id: params.id }
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ message: 'Categoria removida com sucesso' });
   } catch (error) {
-    console.error('Delete produto error:', error);
+    console.error('Delete categoria receita error:', error);
     if (error instanceof Error && error.message === 'Authentication required') {
       return NextResponse.json({ error: 'Autenticação necessária' }, { status: 401 });
     }

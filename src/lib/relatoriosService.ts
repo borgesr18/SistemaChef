@@ -1,5 +1,6 @@
 'use client';
 
+import { useCallback } from 'react';
 import { useProdutos, ProdutoInfo } from './produtosService';
 import { obterLabelCategoria } from './categoriasService';
 import { useEstoque } from './estoqueService';
@@ -36,7 +37,7 @@ export const useRelatorios = () => {
   const { calcularEstoqueAtual } = useEstoque();
   
   // Gerar relatório completo
-  const gerarRelatorioCompleto = async (): Promise<DadosRelatorio> => {
+  const gerarRelatorioCompleto = useCallback(async (): Promise<DadosRelatorio> => {
     // Métricas gerais
     const totalProdutos = produtos.length;
     const totalFichasTecnicas = fichasTecnicas.length;
@@ -145,17 +146,18 @@ export const useRelatorios = () => {
       categoriasReceitas[categoria] += 1;
     });
     
-    const distribuicaoCategoriasReceitas = Object.entries(categoriasReceitas)
-      .map(([categoria, quantidade]: [string, number]) => ({
-        categoria: obterLabelCategoriaReceita(categoria),
-        quantidade
-      }))
-      .sort(
-        (
-          a: { quantidade: number },
-          b: { quantidade: number }
-        ) => b.quantidade - a.quantidade
-      );
+    const distribuicaoCategoriasReceitas = (await Promise.all(
+      Object.entries(categoriasReceitas)
+        .map(async ([categoria, quantidade]: [string, number]) => ({
+          categoria: await obterLabelCategoriaReceita(categoria),
+          quantidade
+        }))
+    )).sort(
+      (
+        a: { quantidade: number },
+        b: { quantidade: number }
+      ) => b.quantidade - a.quantidade
+    );
     
     return {
       totalProdutos,
@@ -168,7 +170,7 @@ export const useRelatorios = () => {
       distribuicaoCategoriasProdutos,
       distribuicaoCategoriasReceitas
     };
-  };
+  }, [produtos, fichasTecnicas, calcularEstoqueAtual]);
   
   // Gerar relatório de custos
   const gerarRelatorioCustos = async () => {

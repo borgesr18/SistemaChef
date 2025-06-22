@@ -59,19 +59,24 @@ const filtrarOculto = (lista: UsuarioInfo[]) =>
 
 export const useUsuarios = () => {
   const [usuarios, setUsuarios] = useState<UsuarioInfo[]>([]);
-  const [usuarioAtual, setUsuarioAtual] = useState<UsuarioInfo | null>(() => {
-    if (typeof window === 'undefined') return null;
-    const token = localStorage.getItem('auth_token');
-    const userData = localStorage.getItem('user_data');
-    return token && userData && userData !== 'undefined' ? JSON.parse(userData) : null;
-  });
+  const [usuarioAtual, setUsuarioAtual] = useState<UsuarioInfo | null>(null);
 
   useEffect(() => {
     const carregarUsuarios = async () => {
       const armazenados = await obterUsuarios();
       setUsuarios(filtrarOculto(armazenados));
     };
+    
+    const carregarUsuarioAtual = () => {
+      const token = localStorage.getItem('auth_token');
+      const userData = localStorage.getItem('user_data');
+      if (token && userData && userData !== 'undefined') {
+        setUsuarioAtual(JSON.parse(userData));
+      }
+    };
+    
     carregarUsuarios();
+    carregarUsuarioAtual();
   }, []);
 
   const senhaForte = (senha: string) =>

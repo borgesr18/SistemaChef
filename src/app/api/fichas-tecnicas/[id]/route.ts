@@ -16,15 +16,9 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
         userId: user.id 
       },
       include: {
-        categoriaRef: true,
         ingredientes: {
           include: {
-            produto: {
-              include: {
-                categoriaRef: true,
-                unidadeRef: true
-              }
-            }
+            produto: true
           }
         }
       }
@@ -84,15 +78,9 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         }
       },
       include: {
-        categoriaRef: true,
         ingredientes: {
           include: {
-            produto: {
-              include: {
-                categoriaRef: true,
-                unidadeRef: true
-              }
-            }
+            produto: true
           }
         }
       }
