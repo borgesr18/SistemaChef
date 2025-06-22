@@ -60,24 +60,36 @@ const filtrarOculto = (lista: UsuarioInfo[]) =>
 export const useUsuarios = () => {
   const [usuarios, setUsuarios] = useState<UsuarioInfo[]>([]);
   const [usuarioAtual, setUsuarioAtual] = useState<UsuarioInfo | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
+    if (isInitialized) return;
+    
     const carregarUsuarios = async () => {
-      const armazenados = await obterUsuarios();
-      setUsuarios(filtrarOculto(armazenados));
+      try {
+        const armazenados = await obterUsuarios();
+        setUsuarios(filtrarOculto(armazenados));
+      } catch (error) {
+        console.error('Erro ao carregar usuários:', error);
+      }
     };
     
     const carregarUsuarioAtual = () => {
-      const token = localStorage.getItem('auth_token');
-      const userData = localStorage.getItem('user_data');
-      if (token && userData && userData !== 'undefined') {
-        setUsuarioAtual(JSON.parse(userData));
+      try {
+        const token = localStorage.getItem('auth_token');
+        const userData = localStorage.getItem('user_data');
+        if (token && userData && userData !== 'undefined') {
+          setUsuarioAtual(JSON.parse(userData));
+        }
+      } catch (error) {
+        console.error('Erro ao carregar usuário atual:', error);
       }
     };
     
     carregarUsuarios();
     carregarUsuarioAtual();
-  }, []);
+    setIsInitialized(true);
+  }, [isInitialized]);
 
   const senhaForte = (senha: string) =>
     /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{6,}$/.test(senha);
@@ -92,8 +104,6 @@ export const useUsuarios = () => {
     if (!senhaForte(dados.senha)) return null;
 
     try {
-      console.log('Enviando dados de registro:', { ...dados, senha: '[HIDDEN]' });
-      
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: getAuthHeaders(),
@@ -101,7 +111,6 @@ export const useUsuarios = () => {
       });
       
       const responseData = await res.json();
-      console.log('Resposta da API de registro:', { status: res.status, data: responseData });
       
       if (!res.ok) {
         console.error('Erro no registro:', responseData);

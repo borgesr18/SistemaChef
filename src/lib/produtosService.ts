@@ -98,7 +98,7 @@ export const obterProdutos = async (): Promise<ProdutoInfo[]> => {
 export const useProdutos = () => {
   const [produtos, setProdutos] = useState<ProdutoInfo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { fichasTecnicas, atualizarFichaTecnica } = useFichasTecnicas();
+  const { fichasTecnicas } = useFichasTecnicas();
 
   // Carregar produtos da API ao inicializar
   useEffect(() => {
@@ -169,31 +169,7 @@ export const useProdutos = () => {
       );
       
       setProdutos(novosProdutos);
-      
-      // Atualizar fichas técnicas que usam este produto
-      fichasTecnicas
-        .filter(f => f.ingredientes.some(i => i.produtoId === id))
-        .forEach(f => {
-          const dados = {
-            nome: f.nome,
-            descricao: f.descricao,
-            categoria: f.categoria,
-            ingredientes: f.ingredientes.map(i => ({
-              produtoId: i.produtoId,
-              quantidade: i.quantidade,
-              unidade: i.unidade,
-            })) as Omit<IngredienteFicha, 'custo' | 'id'>[],
-            modoPreparo: f.modoPreparo,
-            tempoPreparo: f.tempoPreparo,
-            rendimentoTotal: f.rendimentoTotal,
-            unidadeRendimento: f.unidadeRendimento,
-            observacoes: f.observacoes || '',
-          } as Omit<
-            FichaTecnicaInfo,
-            'id' | 'custoTotal' | 'custoPorcao' | 'infoNutricional' | 'infoNutricionalPorcao' | 'dataCriacao' | 'dataModificacao'
-          >;
-          atualizarFichaTecnica(f.id, dados);
-        });
+
       return produtoAtualizado;
     } catch (error) {
       console.error('Erro ao atualizar produto:', error);
@@ -252,8 +228,21 @@ export const categoriasProdutos = [
 ];
 
 // Obter rótulo legível de uma categoria pelo valor armazenado
-export const obterLabelCategoria = (valor: string) => {
+export const obterLabelCategoria = (valor: string, categoriaRef?: { id: string; nome: string }) => {
   if (!valor) return 'Não informado';
+  
+  if (categoriaRef && categoriaRef.nome) {
+    return categoriaRef.nome;
+  }
+  
   const encontrado = categoriasProdutos.find(c => c.value === valor);
-  return encontrado ? encontrado.label : valor;
+  if (encontrado) {
+    return encontrado.label;
+  }
+  
+  if (valor.length > 10 && valor.includes('c')) {
+    return 'Categoria não encontrada';
+  }
+  
+  return valor;
 };
