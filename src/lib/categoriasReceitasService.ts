@@ -1,24 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { getAuthHeaders } from './apiClient';
 
 export interface CategoriaReceitaInfo {
   id: string;
   nome: string;
 }
-
-const getAuthToken = (): string | null => {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem('auth_token');
-};
-
-const getAuthHeaders = () => {
-  const token = getAuthToken();
-  return {
-    'Content-Type': 'application/json',
-    ...(token && { 'Authorization': `Bearer ${token}` })
-  };
-};
 
 const obter = async (): Promise<CategoriaReceitaInfo[]> => {
   try {
