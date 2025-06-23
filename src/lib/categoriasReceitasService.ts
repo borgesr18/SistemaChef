@@ -57,19 +57,16 @@ export const useCategoriasReceita = () => {
       if (cats.length === 0) {
         for (const cat of categoriasPadrao) {
           try {
-            const existing = cats.find(c => c.nome === cat.nome);
-            if (!existing) {
-              const response = await fetch('/api/categorias-receitas', {
-                method: 'POST',
-                headers: getAuthHeaders(),
-                body: JSON.stringify({ nome: cat.nome })
-              });
-              if (response.ok) {
-                const newCat = await response.json();
-                cats.push(newCat);
-              } else if (response.status === 409) {
-                console.log(`Categoria de receita '${cat.nome}' já existe, pulando...`);
-              }
+            const response = await fetch('/api/categorias-receitas', {
+              method: 'POST',
+              headers: getAuthHeaders(),
+              body: JSON.stringify({ nome: cat.nome })
+            });
+            if (response.ok) {
+              const newCat = await response.json();
+              cats.push(newCat);
+            } else if (response.status === 409) {
+              console.log(`Categoria de receita '${cat.nome}' já existe, pulando...`);
             }
           } catch (error) {
             console.error('Erro ao criar categoria de receita padrão:', error);
