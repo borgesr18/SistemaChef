@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { getAuthHeaders } from './apiClient';
 
 export interface EstrategiaPreco {
   id: string;
@@ -16,18 +17,7 @@ export interface EstrategiaPreco {
 
 const gerarId = () => Date.now().toString(36) + Math.random().toString(36).substring(2);
 
-const getAuthToken = (): string | null => {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem('auth_token');
-};
 
-const getAuthHeaders = () => {
-  const token = getAuthToken();
-  return {
-    'Content-Type': 'application/json',
-    ...(token && { 'Authorization': `Bearer ${token}` })
-  };
-};
 
 const ler = async (): Promise<EstrategiaPreco[]> => {
   try {
