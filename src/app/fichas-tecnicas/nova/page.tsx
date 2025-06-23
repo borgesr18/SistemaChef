@@ -258,7 +258,10 @@ export default function NovaFichaTecnicaPage() {
       
       const result = await adicionarFichaTecnica(fichaTecnicaFormatada);
       if (result) {
-        router.push('/fichas-tecnicas');
+        setToast('Ficha técnica criada com sucesso!');
+        setTimeout(() => {
+          router.push('/fichas-tecnicas');
+        }, 1500);
       } else {
         setToast('Erro ao salvar ficha técnica');
       }
