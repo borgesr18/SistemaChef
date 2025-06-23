@@ -1,10 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createHash } from 'crypto';
 
-const adminEmail = 'rba1807@gmail.com';
-const adminNome = 'Admin';
+
+
 
 export interface UsuarioInfo {
   id: string;
@@ -19,9 +18,7 @@ const gerarId = () => {
   return Date.now().toString(36) + Math.random().toString(36).substring(2);
 };
 
-const hashSenha = (senha: string) => {
-  return createHash('sha256').update(senha).digest('hex');
-};
+
 
 const getAuthToken = (): string | null => {
   if (typeof window === 'undefined') return null;
@@ -38,40 +35,65 @@ const getAuthHeaders = () => {
 
 const obterUsuarios = async (): Promise<UsuarioInfo[]> => {
   try {
+    console.log('📡 Fazendo chamada para /api/auth/users...');
     const response = await fetch('/api/auth/users', {
       headers: getAuthHeaders()
     });
     
+    console.log(`📡 Response status: ${response.status}`);
+    
     if (!response.ok) {
-      throw new Error('Erro ao buscar usuários');
+      const errorText = await response.text();
+      console.error(`❌ Erro na API users: ${response.status} - ${errorText}`);
+      throw new Error(`Erro ao buscar usuários: ${response.status}`);
     }
     
     const lista = await response.json();
+    console.log(`✅ Usuários da API: ${lista.length}`);
     return lista.map((u: any) => ({ role: 'viewer', ...u }));
   } catch (err) {
-    console.error('Erro ao buscar usuários da API:', err);
+    console.error('❌ Erro ao buscar usuários da API:', err);
     return [];
   }
 };
 
 const filtrarOculto = (lista: UsuarioInfo[]) =>
-  lista.filter(u => !(u.email === adminEmail && u.nome === adminNome));
+  lista.filter(u => !u.oculto);
 
 export const useUsuarios = () => {
   const [usuarios, setUsuarios] = useState<UsuarioInfo[]>([]);
   const [usuarioAtual, setUsuarioAtual] = useState<UsuarioInfo | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const carregarUsuarios = async () => {
-      const armazenados = await obterUsuarios();
-      setUsuarios(filtrarOculto(armazenados));
+      try {
+        setIsLoading(true);
+        console.log('🔍 Carregando usuários...');
+        const armazenados = await obterUsuarios();
+        console.log('✅ Usuários carregados:', armazenados?.length || 0);
+        console.log('🔍 Usuários após filtro oculto:', filtrarOculto(armazenados)?.length || 0);
+        setUsuarios(armazenados);
+      } catch (error) {
+        console.error('❌ Erro ao carregar usuários:', error);
+        setUsuarios([]);
+      } finally {
+        setIsLoading(false);
+      }
     };
     
     const carregarUsuarioAtual = () => {
-      const token = localStorage.getItem('auth_token');
-      const userData = localStorage.getItem('user_data');
-      if (token && userData && userData !== 'undefined') {
-        setUsuarioAtual(JSON.parse(userData));
+      try {
+        const token = localStorage.getItem('auth_token');
+        const userData = localStorage.getItem('user_data');
+        console.log('🔍 Verificando usuário atual - token:', !!token, 'userData:', !!userData);
+        if (token && userData && userData !== 'undefined') {
+          const user = JSON.parse(userData);
+          console.log('✅ Usuário atual carregado:', user.email);
+          setUsuarioAtual(user);
+        }
+      } catch (error) {
+        console.error('❌ Erro ao carregar usuário atual:', error);
       }
     };
     
@@ -92,8 +114,6 @@ export const useUsuarios = () => {
     if (!senhaForte(dados.senha)) return null;
 
     try {
-      console.log('Enviando dados de registro:', { ...dados, senha: '[HIDDEN]' });
-      
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: getAuthHeaders(),
@@ -101,7 +121,6 @@ export const useUsuarios = () => {
       });
       
       const responseData = await res.json();
-      console.log('Resposta da API de registro:', { status: res.status, data: responseData });
       
       if (!res.ok) {
         console.error('Erro no registro:', responseData);
@@ -239,6 +258,7 @@ export const useUsuarios = () => {
   return {
     usuarios,
     usuarioAtual,
+    isLoading,
     registrarUsuario,
     login,
     logout,

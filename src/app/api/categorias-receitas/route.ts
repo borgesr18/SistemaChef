@@ -44,6 +44,9 @@ export async function POST(req: NextRequest) {
     if (error instanceof Error && error.message === 'Authentication required') {
       return NextResponse.json({ error: 'Autenticação necessária' }, { status: 401 });
     }
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
+      return NextResponse.json({ error: 'Categoria já existe' }, { status: 409 });
+    }
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
   }
 }

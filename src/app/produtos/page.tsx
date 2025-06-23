@@ -8,7 +8,7 @@ import SlideOver from '@/components/ui/SlideOver';
 import { useProdutos, ProdutoInfo, obterLabelCategoria } from '@/lib/produtosService';
 import Link from 'next/link';
 
-export default function ProdutosPage() {
+export default React.memo(function ProdutosPage() {
   const { produtos, isLoading, removerProduto } = useProdutos();
 
   const [selecionado, setSelecionado] = useState<ProdutoInfo | null>(null);
@@ -56,7 +56,7 @@ export default function ProdutosPage() {
                 onClick={() => setSelecionado(produto)}
               >
                 <TableCell className="font-medium text-gray-700">{produto.nome}</TableCell>
-                <TableCell>{produto.categoriaRef?.nome || produto.categoria}</TableCell>
+                <TableCell>{obterLabelCategoria(produto.categoria)}</TableCell>
                 <TableCell>{produto.unidadeMedida}</TableCell>
                 <TableCell>{formatarPreco(produto.preco)}</TableCell>
                 <TableCell>{produto.fornecedor}</TableCell>
@@ -83,4 +83,4 @@ export default function ProdutosPage() {
       </SlideOver>
     </div>
   );
-}
+});

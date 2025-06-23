@@ -1,26 +1,50 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Card from '@/components/ui/Card';
 import Table, { TableRow, TableCell } from '@/components/ui/Table';
 import Button from '@/components/ui/Button';
 import SlideOver from '@/components/ui/SlideOver';
 import {
-  useFichasTecnicas,
   FichaTecnicaInfo,
-  obterLabelCategoriaReceita
+  obterLabelCategoriaReceita,
+  removerFichaTecnica,
+  obterFichasTecnicas
 } from '@/lib/fichasTecnicasService';
+import { useCategoriasReceita } from '@/lib/categoriasReceitasService';
 import Link from 'next/link';
 
-export default function FichasTecnicasPage() {
-  const { fichasTecnicas, isLoading, removerFichaTecnica } = useFichasTecnicas();
-
+export default React.memo(function FichasTecnicasPage() {
+  const [fichasTecnicas, setFichasTecnicas] = useState<FichaTecnicaInfo[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [selecionada, setSelecionada] = useState<FichaTecnicaInfo | null>(null);
+  const { categorias } = useCategoriasReceita();
+  
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setIsLoading(true);
+        const data = await obterFichasTecnicas();
+        console.log('Fichas técnicas loaded:', data?.length || 0);
+        setFichasTecnicas(data || []);
+      } catch (error) {
+        console.error('Erro ao carregar fichas técnicas:', error);
+        setFichasTecnicas([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadData();
+  }, []);
 
-  const handleRemover = (id: string) => {
+  const handleRemover = async (id: string) => {
     if (confirm('Tem certeza que deseja remover esta ficha técnica?')) {
-      removerFichaTecnica(id);
-      setSelecionada(null);
+      const success = await removerFichaTecnica(id);
+      if (success) {
+        setFichasTecnicas(prev => prev.filter(f => f.id !== id));
+        setSelecionada(null);
+      }
     }
   };
 
@@ -75,7 +99,7 @@ export default function FichasTecnicasPage() {
               onClick={() => setSelecionada(ficha)}
             >
               <TableCell className="font-medium text-gray-700">{ficha.nome}</TableCell>
-              <TableCell>{obterLabelCategoriaReceita(ficha.categoria)}</TableCell>
+              <TableCell>{obterLabelCategoriaReceita(ficha.categoria, categorias)}</TableCell>
               <TableCell>{ficha.rendimentoTotal} {ficha.unidadeRendimento}</TableCell>
               <TableCell>{formatarPreco(ficha.custoTotal)}</TableCell>
               <TableCell>{formatarData(ficha.dataModificacao)}</TableCell>
@@ -96,15 +120,25 @@ export default function FichasTecnicasPage() {
             <p className="text-sm text-gray-600">Custo Total: {formatarPreco(selecionada.custoTotal)}</p>
             <p className="text-sm text-gray-600">Data: {formatarData(selecionada.dataModificacao)}</p>
             <div className="flex flex-col space-y-2">
-              <Link href={`/fichas-tecnicas/${selecionada.id}`}> <Button variant="secondary" fullWidth>Ver</Button> </Link>
-              <Link href={`/fichas-tecnicas/${selecionada.id}/editar`}> <Button variant="primary" fullWidth>Editar</Button> </Link>
-              <Button variant="danger" fullWidth onClick={() => handleRemover(selecionada.id)}>Excluir</Button>
-              <Link href={`/producao?ficha=${selecionada.id}`}><Button fullWidth>Produzir</Button></Link>
-              <Link href={`/precos?ficha=${selecionada.id}`}><Button fullWidth>Calcular Preço</Button></Link>
+              <Link href={`/fichas-tecnicas/${selecionada.id}`}>
+                <Button variant="secondary" fullWidth>Ver</Button>
+              </Link>
+              <Link href={`/fichas-tecnicas/${selecionada.id}/editar`}>
+                <Button variant="primary" fullWidth>Editar</Button>
+              </Link>
+              <Button variant="danger" fullWidth onClick={() => handleRemover(selecionada.id)}>
+                Excluir
+              </Button>
+              <Link href={`/producao?ficha=${selecionada.id}`}>
+                <Button fullWidth>Produzir</Button>
+              </Link>
+              <Link href={`/precos?ficha=${selecionada.id}`}>
+                <Button fullWidth>Calcular Preço</Button>
+              </Link>
             </div>
           </div>
         )}
       </SlideOver>
     </div>
   );
-}
+});

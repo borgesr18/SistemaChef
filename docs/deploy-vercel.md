@@ -44,9 +44,29 @@ Mantenha as configurações padrão detectadas pelo Vercel:
 - **Build Command**: `npm run build`
 - **Output Directory**: .next
 
-### 5. Variáveis de Ambiente (Opcional)
+### 5. Variáveis de Ambiente (OBRIGATÓRIO)
 
-Para esta versão do sistema que utiliza armazenamento local (localStorage), não é necessário configurar variáveis de ambiente. Em versões futuras que utilizem banco de dados, será necessário adicionar as credenciais aqui.
+Para o sistema funcionar corretamente com Supabase, configure as seguintes variáveis de ambiente no Vercel:
+
+1. No dashboard do projeto no Vercel, vá para "Settings" > "Environment Variables"
+2. Adicione as seguintes variáveis:
+
+**Banco de Dados:**
+- `DATABASE_URL`: `postgresql://postgres:mrZB6plzzaTFymvP@db.sutmfzcmrlqnocsusiav.supabase.co:5432/postgres`
+- `DIRECT_URL`: `postgresql://postgres:mrZB6plzzaTFymvP@db.sutmfzcmrlqnocsusiav.supabase.co:5432/postgres`
+
+**Supabase:**
+- `NEXT_PUBLIC_SUPABASE_URL`: `https://sutmfzcmrlqnocsusiav.supabase.co`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN1dG1memNtcmxxbm9jc3VzaWF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1MzgwODMsImV4cCI6MjA2NjExNDA4M30.BQRo64qRNzqB_XGNeSe4jkZ8Mzzji8eUYVbS_nWw8tI`
+- `SUPABASE_SERVICE_ROLE_KEY`: [Obter do dashboard do Supabase em Settings > API]
+
+**Autenticação JWT:**
+- `JWT_SECRET`: `7kv6FyTjYf0QW1oyuQmUMhGFsag00o5YCUk0klZk6c62NNsfrkwJGgFxgDt91hSKITblW/CWAFMdhm0SeeP+pA==`
+
+3. Certifique-se de configurar essas variáveis para todos os ambientes (Production, Preview, Development)
+4. Após adicionar as variáveis, faça um novo deploy para aplicar as mudanças
+
+**IMPORTANTE**: Sem essas variáveis de ambiente, o sistema apresentará erros 401 (Unauthorized) em todas as APIs.
 
 ### 6. Deploy
 

@@ -24,17 +24,24 @@ const getAuthHeaders = () => {
 
 const obterCategorias = async (): Promise<CategoriaInfo[]> => {
   try {
+    console.log('🔍 Buscando categorias de produtos...');
     const response = await fetch('/api/categorias', {
       headers: getAuthHeaders()
     });
     
+    console.log(`📡 Response status: ${response.status}`);
+    
     if (!response.ok) {
-      throw new Error('Erro ao buscar categorias');
+      const errorText = await response.text();
+      console.error(`❌ Erro na API categorias: ${response.status} - ${errorText}`);
+      throw new Error(`Erro ao buscar categorias: ${response.status}`);
     }
     
-    return await response.json();
+    const categorias = await response.json();
+    console.log(`✅ Categorias carregadas: ${categorias.length}`);
+    return categorias;
   } catch (err) {
-    console.error('Erro ao buscar categorias da API:', err);
+    console.error('❌ Erro ao buscar categorias da API:', err);
     return [];
   }
 };
@@ -51,25 +58,45 @@ const categoriasPadrao: CategoriaInfo[] = [
 
 export const useCategorias = () => {
   const [categorias, setCategorias] = useState<CategoriaInfo[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const carregarCategorias = async () => {
-      let cats = await obterCategorias();
-      if (cats.length === 0) {
-        cats = categoriasPadrao;
-        for (const cat of categoriasPadrao) {
-          try {
-            await fetch('/api/categorias', {
-              method: 'POST',
-              headers: getAuthHeaders(),
-              body: JSON.stringify({ nome: cat.nome })
-            });
-          } catch (error) {
-            console.error('Erro ao criar categoria padrão:', error);
+      try {
+        setIsLoading(true);
+        let cats = await obterCategorias();
+        
+        if (cats.length === 0) {
+          for (const cat of categoriasPadrao) {
+            try {
+              const existing = cats.find(c => c.nome === cat.nome);
+              if (!existing) {
+                const response = await fetch('/api/categorias', {
+                  method: 'POST',
+                  headers: getAuthHeaders(),
+                  body: JSON.stringify({ nome: cat.nome })
+                });
+                if (response.ok) {
+                  const newCat = await response.json();
+                  cats.push(newCat);
+                } else if (response.status === 409) {
+                  console.log(`Categoria '${cat.nome}' já existe, pulando...`);
+                }
+              }
+            } catch (error) {
+              console.error('Erro ao criar categoria padrão:', error);
+            }
           }
+          cats = await obterCategorias();
         }
+        console.log('Categorias loaded:', cats?.length || 0);
+        setCategorias(cats);
+      } catch (error) {
+        console.error('Erro ao carregar categorias:', error);
+        setCategorias([]);
+      } finally {
+        setIsLoading(false);
       }
-      setCategorias(cats);
     };
     carregarCategorias();
   }, []);
@@ -142,7 +169,7 @@ export const useCategorias = () => {
 
   const obterCategoriaPorId = (id: string) => categorias.find(c => c.id === id);
 
-  return { categorias, adicionarCategoria, atualizarCategoria, removerCategoria, obterCategoriaPorId };
+  return { categorias, isLoading, adicionarCategoria, atualizarCategoria, removerCategoria, obterCategoriaPorId };
 };
 
 export const obterLabelCategoria = async (id: string) => {

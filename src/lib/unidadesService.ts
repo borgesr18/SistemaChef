@@ -61,11 +61,21 @@ const unidadesPadrao: UnidadeInfo[] = [
 
 export const useUnidadesMedida = () => {
   const [unidades, setUnidades] = useState<UnidadeInfo[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const carregarUnidades = async () => {
-      const atual = await obterUnidades();
-      setUnidades(atual);
+      try {
+        setIsLoading(true);
+        const atual = await obterUnidades();
+        console.log('Unidades loaded:', atual?.length || 0);
+        setUnidades(atual);
+      } catch (error) {
+        console.error('Erro ao carregar unidades de medida:', error);
+        setUnidades([]);
+      } finally {
+        setIsLoading(false);
+      }
     };
     carregarUnidades();
   }, []);
@@ -150,6 +160,7 @@ export const useUnidadesMedida = () => {
 
   return {
     unidades,
+    isLoading,
     adicionarUnidade,
     atualizarUnidade,
     removerUnidade,

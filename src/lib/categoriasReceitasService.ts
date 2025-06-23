@@ -22,38 +22,75 @@ const getAuthHeaders = () => {
 
 const obter = async (): Promise<CategoriaReceitaInfo[]> => {
   try {
+    console.log('🔍 Buscando categorias de receitas...');
     const response = await fetch('/api/categorias-receitas', {
       headers: getAuthHeaders()
     });
     
+    console.log(`📡 Response status: ${response.status}`);
+    
     if (!response.ok) {
-      throw new Error('Erro ao buscar categorias de receitas');
+      const errorText = await response.text();
+      console.error(`❌ Erro na API categorias-receitas: ${response.status} - ${errorText}`);
+      throw new Error(`Erro ao buscar categorias de receitas: ${response.status}`);
     }
     
-    return await response.json();
+    const categorias = await response.json();
+    console.log(`✅ Categorias de receitas carregadas: ${categorias.length}`);
+    return categorias;
   } catch (error) {
-    console.error('Erro ao buscar categorias de receitas:', error);
+    console.error('❌ Erro ao buscar categorias de receitas:', error);
     return [];
   }
 };
 
 const categoriasPadrao: CategoriaReceitaInfo[] = [
-  { id: 'entrada', nome: 'Entrada' },
-  { id: 'prato-principal', nome: 'Prato Principal' },
-  { id: 'acompanhamento', nome: 'Acompanhamento' },
-  { id: 'sobremesa', nome: 'Sobremesa' },
-  { id: 'bebida', nome: 'Bebida' },
-  { id: 'molho', nome: 'Molho/Condimento' },
-  { id: 'outro', nome: 'Outro' },
+  { id: '', nome: 'Entrada' },
+  { id: '', nome: 'Prato Principal' },
+  { id: '', nome: 'Acompanhamento' },
+  { id: '', nome: 'Sobremesa' },
+  { id: '', nome: 'Bebida' },
+  { id: '', nome: 'Molho/Condimento' },
+  { id: '', nome: 'Outro' },
 ];
 
 export const useCategoriasReceita = () => {
   const [categorias, setCategorias] = useState<CategoriaReceitaInfo[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const carregarCategorias = async () => {
-      const categoriasCarregadas = await obter();
-      setCategorias(categoriasCarregadas);
+      try {
+        setIsLoading(true);
+        let cats = await obter();
+        
+        if (cats.length === 0) {
+          for (const cat of categoriasPadrao) {
+            try {
+              const response = await fetch('/api/categorias-receitas', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ nome: cat.nome })
+              });
+              if (response.ok) {
+                const newCat = await response.json();
+                cats.push(newCat);
+              } else if (response.status === 409) {
+                console.log(`Categoria de receita '${cat.nome}' já existe, pulando...`);
+              }
+            } catch (error) {
+              console.error('Erro ao criar categoria de receita padrão:', error);
+            }
+          }
+          cats = await obter();
+        }
+        setCategorias(cats);
+      } catch (error) {
+        console.error('Erro ao carregar categorias de receitas:', error);
+        setCategorias([]);
+      } finally {
+        setIsLoading(false);
+      }
     };
     carregarCategorias();
   }, []);
@@ -121,16 +158,11 @@ export const useCategoriasReceita = () => {
 
   const obterPorId = (id: string) => categorias.find(c => c.id === id);
 
-  return { categorias, adicionar, atualizar, remover, obterPorId };
+  return { categorias, isLoading, adicionar, atualizar, remover, obterPorId };
 };
 
-export const obterLabelCategoriaReceita = async (id: string) => {
+export const obterLabelCategoriaReceita = (id: string, categorias: CategoriaReceitaInfo[] = []) => {
   if (!id) return 'Não informado';
-  try {
-    const categorias = await obter();
-    const cat = categorias.find(c => c.id === id);
-    return cat ? cat.nome : id;
-  } catch {
-    return id;
-  }
+  const cat = categorias.find(c => c.id === id);
+  return cat ? cat.nome : id;
 };

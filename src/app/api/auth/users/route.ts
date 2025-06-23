@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUsuarios, ensureAdmin } from '@/lib/serverUsuarios';
+import { getAllUsuarios, ensureAdmin } from '@/lib/serverUsuarios';
 import { requireRole } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
     
     await requireRole(req, ['admin']);
 
-    const usuarios = await getUsuarios();
+    const usuarios = await getAllUsuarios();
     const list = usuarios.map((u) => ({
       id: u.id,
       nome: u.nome,
