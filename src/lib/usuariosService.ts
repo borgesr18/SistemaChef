@@ -35,18 +35,24 @@ const getAuthHeaders = () => {
 
 const obterUsuarios = async (): Promise<UsuarioInfo[]> => {
   try {
+    console.log('📡 Fazendo chamada para /api/auth/users...');
     const response = await fetch('/api/auth/users', {
       headers: getAuthHeaders()
     });
     
+    console.log(`📡 Response status: ${response.status}`);
+    
     if (!response.ok) {
-      throw new Error('Erro ao buscar usuários');
+      const errorText = await response.text();
+      console.error(`❌ Erro na API users: ${response.status} - ${errorText}`);
+      throw new Error(`Erro ao buscar usuários: ${response.status}`);
     }
     
     const lista = await response.json();
+    console.log(`✅ Usuários da API: ${lista.length}`);
     return lista.map((u: any) => ({ role: 'viewer', ...u }));
   } catch (err) {
-    console.error('Erro ao buscar usuários da API:', err);
+    console.error('❌ Erro ao buscar usuários da API:', err);
     return [];
   }
 };
@@ -57,17 +63,21 @@ const filtrarOculto = (lista: UsuarioInfo[]) =>
 export const useUsuarios = () => {
   const [usuarios, setUsuarios] = useState<UsuarioInfo[]>([]);
   const [usuarioAtual, setUsuarioAtual] = useState<UsuarioInfo | null>(null);
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (isInitialized) return;
-    
     const carregarUsuarios = async () => {
       try {
+        setIsLoading(true);
+        console.log('🔍 Carregando usuários...');
         const armazenados = await obterUsuarios();
+        console.log('✅ Usuários carregados:', armazenados?.length || 0);
         setUsuarios(filtrarOculto(armazenados));
       } catch (error) {
-        console.error('Erro ao carregar usuários:', error);
+        console.error('❌ Erro ao carregar usuários:', error);
+        setUsuarios([]);
+      } finally {
+        setIsLoading(false);
       }
     };
     
@@ -75,18 +85,20 @@ export const useUsuarios = () => {
       try {
         const token = localStorage.getItem('auth_token');
         const userData = localStorage.getItem('user_data');
+        console.log('🔍 Verificando usuário atual - token:', !!token, 'userData:', !!userData);
         if (token && userData && userData !== 'undefined') {
-          setUsuarioAtual(JSON.parse(userData));
+          const user = JSON.parse(userData);
+          console.log('✅ Usuário atual carregado:', user.email);
+          setUsuarioAtual(user);
         }
       } catch (error) {
-        console.error('Erro ao carregar usuário atual:', error);
+        console.error('❌ Erro ao carregar usuário atual:', error);
       }
     };
     
     carregarUsuarios();
     carregarUsuarioAtual();
-    setIsInitialized(true);
-  }, [isInitialized]);
+  }, []);
 
   const senhaForte = (senha: string) =>
     /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{6,}$/.test(senha);
@@ -245,6 +257,7 @@ export const useUsuarios = () => {
   return {
     usuarios,
     usuarioAtual,
+    isLoading,
     registrarUsuario,
     login,
     logout,

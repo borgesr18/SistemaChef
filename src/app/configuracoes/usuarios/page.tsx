@@ -8,7 +8,7 @@ import Input from '@/components/ui/Input';
 import { useUsuarios } from '@/lib/usuariosService';
 
 export default React.memo(function UsuariosConfigPage() {
-  const { usuarios, registrarUsuario, removerUsuario, alterarSenha, editarUsuario } = useUsuarios();
+  const { usuarios, isLoading, registrarUsuario, removerUsuario, alterarSenha, editarUsuario } = useUsuarios();
   const { isOpen, openModal, closeModal } = useModal();
   const { isOpen: isSenhaOpen, openModal: openSenhaModal, closeModal: closeSenhaModal } = useModal();
   const { isOpen: isEditOpen, openModal: openEditModal, closeModal: closeEditModal } = useModal();

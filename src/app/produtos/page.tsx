@@ -8,7 +8,7 @@ import SlideOver from '@/components/ui/SlideOver';
 import { useProdutos, ProdutoInfo, obterLabelCategoria } from '@/lib/produtosService';
 import Link from 'next/link';
 
-export default function ProdutosPage() {
+export default React.memo(function ProdutosPage() {
   const { produtos, isLoading, removerProduto } = useProdutos();
 
   const [selecionado, setSelecionado] = useState<ProdutoInfo | null>(null);
@@ -83,4 +83,4 @@ export default function ProdutosPage() {
       </SlideOver>
     </div>
   );
-}
+});
