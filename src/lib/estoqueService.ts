@@ -2,11 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { obterProdutos, ProdutoInfo } from './produtosService';
-import {
-  useFichasTecnicas,
-  FichaTecnicaInfo,
-  IngredienteFicha
-} from './fichasTecnicasService';
+import { getAuthHeaders } from './apiClient';
 
 export interface MovimentacaoEstoque {
   id: string;
@@ -21,19 +17,6 @@ export interface MovimentacaoEstoque {
 
 const gerarId = () => {
   return Date.now().toString(36) + Math.random().toString(36).substring(2);
-};
-
-const getAuthToken = (): string | null => {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem('auth_token');
-};
-
-const getAuthHeaders = () => {
-  const token = getAuthToken();
-  return {
-    'Content-Type': 'application/json',
-    ...(token && { 'Authorization': `Bearer ${token}` })
-  };
 };
 
 const obterMovimentacoes = async (): Promise<MovimentacaoEstoque[]> => {
@@ -56,12 +39,10 @@ const obterMovimentacoes = async (): Promise<MovimentacaoEstoque[]> => {
 export const useEstoque = () => {
   const [movimentacoes, setMovimentacoes] = useState<MovimentacaoEstoque[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { fichasTecnicas, atualizarFichaTecnica } = useFichasTecnicas();
 
   const atualizarProdutoDeEntrada = async (mov: MovimentacaoEstoque) => {
     if (!mov.preco) return;
     
-    // Atualizar produto via API
     try {
       const produtos = await obterProdutos();
       const produto = produtos.find(p => p.id === mov.produtoId);
@@ -86,41 +67,6 @@ export const useEstoque = () => {
     } catch (error) {
       console.error('Erro ao atualizar produto:', error);
     }
-
-    // Atualizar fichas técnicas que usam este produto
-    fichasTecnicas
-      .filter((f: FichaTecnicaInfo) =>
-        f.ingredientes.some((i: IngredienteFicha) => i.produtoId === mov.produtoId)
-      )
-      .forEach((f: FichaTecnicaInfo) => {
-        const dadosFicha = {
-          nome: f.nome,
-          descricao: f.descricao,
-          categoria: f.categoria,
-          ingredientes: f.ingredientes.map(
-            (i: IngredienteFicha) => ({
-              produtoId: i.produtoId,
-              quantidade: i.quantidade,
-              unidade: i.unidade,
-            })
-          ) as Omit<IngredienteFicha, 'custo' | 'id'>[],
-          modoPreparo: f.modoPreparo,
-          tempoPreparo: f.tempoPreparo,
-          rendimentoTotal: f.rendimentoTotal,
-          unidadeRendimento: f.unidadeRendimento,
-          observacoes: f.observacoes || ''
-        } as Omit<
-          FichaTecnicaInfo,
-          | 'id'
-          | 'custoTotal'
-          | 'custoPorcao'
-          | 'infoNutricional'
-          | 'infoNutricionalPorcao'
-          | 'dataCriacao'
-          | 'dataModificacao'
-        >;
-        atualizarFichaTecnica(f.id, dadosFicha);
-      });
   };
 
   useEffect(() => {
