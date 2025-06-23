@@ -103,10 +103,17 @@ export const useProdutos = () => {
   // Carregar produtos da API ao inicializar
   useEffect(() => {
     const carregarProdutos = async () => {
-      setIsLoading(true);
-      const produtosArmazenados = await obterProdutos();
-      setProdutos(produtosArmazenados);
-      setIsLoading(false);
+      try {
+        setIsLoading(true);
+        const produtosArmazenados = await obterProdutos();
+        console.log('Produtos loaded:', produtosArmazenados?.length || 0);
+        setProdutos(produtosArmazenados);
+      } catch (error) {
+        console.error('Erro ao carregar produtos:', error);
+        setProdutos([]);
+      } finally {
+        setIsLoading(false);
+      }
     };
     carregarProdutos();
   }, []);

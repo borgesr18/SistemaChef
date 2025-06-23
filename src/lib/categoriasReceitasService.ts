@@ -56,32 +56,41 @@ const categoriasPadrao: CategoriaReceitaInfo[] = [
 
 export const useCategoriasReceita = () => {
   const [categorias, setCategorias] = useState<CategoriaReceitaInfo[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const carregarCategorias = async () => {
-      let cats = await obter();
-      
-      if (cats.length === 0) {
-        for (const cat of categoriasPadrao) {
-          try {
-            const response = await fetch('/api/categorias-receitas', {
-              method: 'POST',
-              headers: getAuthHeaders(),
-              body: JSON.stringify({ nome: cat.nome })
-            });
-            if (response.ok) {
-              const newCat = await response.json();
-              cats.push(newCat);
-            } else if (response.status === 409) {
-              console.log(`Categoria de receita '${cat.nome}' já existe, pulando...`);
+      try {
+        setIsLoading(true);
+        let cats = await obter();
+        
+        if (cats.length === 0) {
+          for (const cat of categoriasPadrao) {
+            try {
+              const response = await fetch('/api/categorias-receitas', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ nome: cat.nome })
+              });
+              if (response.ok) {
+                const newCat = await response.json();
+                cats.push(newCat);
+              } else if (response.status === 409) {
+                console.log(`Categoria de receita '${cat.nome}' já existe, pulando...`);
+              }
+            } catch (error) {
+              console.error('Erro ao criar categoria de receita padrão:', error);
             }
-          } catch (error) {
-            console.error('Erro ao criar categoria de receita padrão:', error);
           }
+          cats = await obter();
         }
-        cats = await obter();
+        setCategorias(cats);
+      } catch (error) {
+        console.error('Erro ao carregar categorias de receitas:', error);
+        setCategorias([]);
+      } finally {
+        setIsLoading(false);
       }
-      setCategorias(cats);
     };
     carregarCategorias();
   }, []);
@@ -149,16 +158,11 @@ export const useCategoriasReceita = () => {
 
   const obterPorId = (id: string) => categorias.find(c => c.id === id);
 
-  return { categorias, adicionar, atualizar, remover, obterPorId };
+  return { categorias, isLoading, adicionar, atualizar, remover, obterPorId };
 };
 
-export const obterLabelCategoriaReceita = async (id: string) => {
+export const obterLabelCategoriaReceita = (id: string, categorias: CategoriaReceitaInfo[] = []) => {
   if (!id) return 'Não informado';
-  try {
-    const categorias = await obter();
-    const cat = categorias.find(c => c.id === id);
-    return cat ? cat.nome : id;
-  } catch {
-    return id;
-  }
+  const cat = categorias.find(c => c.id === id);
+  return cat ? cat.nome : id;
 };

@@ -11,26 +11,31 @@ import {
   removerFichaTecnica,
   obterFichasTecnicas
 } from '@/lib/fichasTecnicasService';
+import { useCategoriasReceita } from '@/lib/categoriasReceitasService';
 import Link from 'next/link';
 
-export default function FichasTecnicasPage() {
+export default React.memo(function FichasTecnicasPage() {
   const [fichasTecnicas, setFichasTecnicas] = useState<FichaTecnicaInfo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selecionada, setSelecionada] = useState<FichaTecnicaInfo | null>(null);
+  const { categorias } = useCategoriasReceita();
   
   useEffect(() => {
-    setIsLoading(true);
-    
-    obterFichasTecnicas()
-      .then((data) => {
+    const loadData = async () => {
+      try {
+        setIsLoading(true);
+        const data = await obterFichasTecnicas();
+        console.log('Fichas técnicas loaded:', data?.length || 0);
         setFichasTecnicas(data || []);
-        setIsLoading(false);
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error('Erro ao carregar fichas técnicas:', error);
         setFichasTecnicas([]);
+      } finally {
         setIsLoading(false);
-      });
+      }
+    };
+    
+    loadData();
   }, []);
 
   const handleRemover = async (id: string) => {
@@ -94,7 +99,7 @@ export default function FichasTecnicasPage() {
               onClick={() => setSelecionada(ficha)}
             >
               <TableCell className="font-medium text-gray-700">{ficha.nome}</TableCell>
-              <TableCell>{obterLabelCategoriaReceita(ficha.categoria)}</TableCell>
+              <TableCell>{obterLabelCategoriaReceita(ficha.categoria, categorias)}</TableCell>
               <TableCell>{ficha.rendimentoTotal} {ficha.unidadeRendimento}</TableCell>
               <TableCell>{formatarPreco(ficha.custoTotal)}</TableCell>
               <TableCell>{formatarData(ficha.dataModificacao)}</TableCell>
@@ -136,4 +141,4 @@ export default function FichasTecnicasPage() {
       </SlideOver>
     </div>
   );
-}
+});

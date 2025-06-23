@@ -58,35 +58,45 @@ const categoriasPadrao: CategoriaInfo[] = [
 
 export const useCategorias = () => {
   const [categorias, setCategorias] = useState<CategoriaInfo[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const carregarCategorias = async () => {
-      let cats = await obterCategorias();
-      
-      if (cats.length === 0) {
-        for (const cat of categoriasPadrao) {
-          try {
-            const existing = cats.find(c => c.nome === cat.nome);
-            if (!existing) {
-              const response = await fetch('/api/categorias', {
-                method: 'POST',
-                headers: getAuthHeaders(),
-                body: JSON.stringify({ nome: cat.nome })
-              });
-              if (response.ok) {
-                const newCat = await response.json();
-                cats.push(newCat);
-              } else if (response.status === 409) {
-                console.log(`Categoria '${cat.nome}' já existe, pulando...`);
+      try {
+        setIsLoading(true);
+        let cats = await obterCategorias();
+        
+        if (cats.length === 0) {
+          for (const cat of categoriasPadrao) {
+            try {
+              const existing = cats.find(c => c.nome === cat.nome);
+              if (!existing) {
+                const response = await fetch('/api/categorias', {
+                  method: 'POST',
+                  headers: getAuthHeaders(),
+                  body: JSON.stringify({ nome: cat.nome })
+                });
+                if (response.ok) {
+                  const newCat = await response.json();
+                  cats.push(newCat);
+                } else if (response.status === 409) {
+                  console.log(`Categoria '${cat.nome}' já existe, pulando...`);
+                }
               }
+            } catch (error) {
+              console.error('Erro ao criar categoria padrão:', error);
             }
-          } catch (error) {
-            console.error('Erro ao criar categoria padrão:', error);
           }
+          cats = await obterCategorias();
         }
-        cats = await obterCategorias();
+        console.log('Categorias loaded:', cats?.length || 0);
+        setCategorias(cats);
+      } catch (error) {
+        console.error('Erro ao carregar categorias:', error);
+        setCategorias([]);
+      } finally {
+        setIsLoading(false);
       }
-      setCategorias(cats);
     };
     carregarCategorias();
   }, []);
@@ -159,7 +169,7 @@ export const useCategorias = () => {
 
   const obterCategoriaPorId = (id: string) => categorias.find(c => c.id === id);
 
-  return { categorias, adicionarCategoria, atualizarCategoria, removerCategoria, obterCategoriaPorId };
+  return { categorias, isLoading, adicionarCategoria, atualizarCategoria, removerCategoria, obterCategoriaPorId };
 };
 
 export const obterLabelCategoria = async (id: string) => {

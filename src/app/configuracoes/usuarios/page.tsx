@@ -1,13 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import Table, { TableRow, TableCell } from '@/components/ui/Table';
 import Button from '@/components/ui/Button';
 import Modal, { useModal } from '@/components/ui/Modal';
 import Input from '@/components/ui/Input';
 import { useUsuarios } from '@/lib/usuariosService';
 
-export default function UsuariosConfigPage() {
+export default React.memo(function UsuariosConfigPage() {
   const { usuarios, registrarUsuario, removerUsuario, alterarSenha, editarUsuario } = useUsuarios();
   const { isOpen, openModal, closeModal } = useModal();
   const { isOpen: isSenhaOpen, openModal: openSenhaModal, closeModal: closeSenhaModal } = useModal();
@@ -199,4 +199,4 @@ export default function UsuariosConfigPage() {
       </Modal>
     </div>
   );
-}
+});
