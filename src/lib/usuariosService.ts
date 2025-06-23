@@ -70,35 +70,42 @@ export const useUsuarios = () => {
       try {
         setIsLoading(true);
         console.log('🔍 Carregando usuários...');
-        const armazenados = await obterUsuarios();
-        console.log('✅ Usuários carregados:', armazenados?.length || 0);
-        console.log('🔍 Usuários após filtro oculto:', filtrarOculto(armazenados)?.length || 0);
-        setUsuarios(armazenados);
+        
+        const token = localStorage.getItem('auth_token');
+        const userData = localStorage.getItem('user_data');
+        console.log('🔐 Auth state:', { 
+          tokenExists: !!token,
+          userDataExists: !!userData
+        });
+        
+        if (token && userData && userData !== 'undefined') {
+          const user = JSON.parse(userData);
+          console.log('✅ Usuário atual carregado:', user.email);
+          setUsuarioAtual(user);
+          
+          if (user.role === 'admin') {
+            const armazenados = await obterUsuarios();
+            console.log('✅ Usuários carregados:', armazenados?.length || 0);
+            setUsuarios(armazenados);
+          } else {
+            console.log('👤 User is not admin, skipping users list');
+            setUsuarios([]);
+          }
+        } else {
+          console.log('⚠️ No valid auth token or user data found');
+          setUsuarioAtual(null);
+          setUsuarios([]);
+        }
       } catch (error) {
         console.error('❌ Erro ao carregar usuários:', error);
         setUsuarios([]);
+        setUsuarioAtual(null);
       } finally {
         setIsLoading(false);
       }
     };
     
-    const carregarUsuarioAtual = () => {
-      try {
-        const token = localStorage.getItem('auth_token');
-        const userData = localStorage.getItem('user_data');
-        console.log('🔍 Verificando usuário atual - token:', !!token, 'userData:', !!userData);
-        if (token && userData && userData !== 'undefined') {
-          const user = JSON.parse(userData);
-          console.log('✅ Usuário atual carregado:', user.email);
-          setUsuarioAtual(user);
-        }
-      } catch (error) {
-        console.error('❌ Erro ao carregar usuário atual:', error);
-      }
-    };
-    
     carregarUsuarios();
-    carregarUsuarioAtual();
   }, []);
 
   const senhaForte = (senha: string) =>

@@ -59,13 +59,20 @@ export const useCategoriasReceita = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+    
     const carregarCategorias = async () => {
       try {
+        if (!isMounted) return;
         setIsLoading(true);
+        
         let cats = await obter();
+        
+        if (!isMounted) return;
         
         if (cats.length === 0) {
           for (const cat of categoriasPadrao) {
+            if (!isMounted) return;
             try {
               const response = await fetch('/api/categorias-receitas', {
                 method: 'POST',
@@ -82,17 +89,31 @@ export const useCategoriasReceita = () => {
               console.error('Erro ao criar categoria de receita padrão:', error);
             }
           }
-          cats = await obter();
+          if (isMounted) {
+            cats = await obter();
+          }
         }
-        setCategorias(cats);
+        
+        if (isMounted) {
+          setCategorias(cats);
+        }
       } catch (error) {
         console.error('Erro ao carregar categorias de receitas:', error);
-        setCategorias([]);
+        if (isMounted) {
+          setCategorias([]);
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
+    
     carregarCategorias();
+    
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const adicionar = async (nome: string) => {
