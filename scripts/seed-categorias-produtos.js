@@ -3,21 +3,21 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 const categoriasPadrao = [
-  { nome: 'Entrada' },
-  { nome: 'Prato Principal' },
-  { nome: 'Acompanhamento' },
-  { nome: 'Sobremesa' },
-  { nome: 'Bebida' },
-  { nome: 'Molho/Condimento' },
-  { nome: 'Outro' },
+  { nome: 'Bebidas' },
+  { nome: 'Carnes' },
+  { nome: 'Grãos e Cereais' },
+  { nome: 'Hortifruti' },
+  { nome: 'Laticínios' },
+  { nome: 'Outros' },
+  { nome: 'Temperos' },
 ];
 
-async function seedCategoriasReceitas() {
-  console.log('Seeding categorias de receitas...');
+async function seedCategoriasProdutos() {
+  console.log('Seeding categorias de produtos...');
   
   for (const categoria of categoriasPadrao) {
     try {
-      await prisma.categoriaReceita.upsert({
+      await prisma.categoria.upsert({
         where: { nome: categoria.nome },
         update: {},
         create: { nome: categoria.nome }
@@ -28,10 +28,10 @@ async function seedCategoriasReceitas() {
     }
   }
   
-  console.log('✅ Seed de categorias de receitas concluído!');
+  console.log('✅ Seed de categorias de produtos concluído!');
 }
 
-seedCategoriasReceitas()
+seedCategoriasProdutos()
   .catch((e) => {
     console.error('❌ Erro no seed:', e);
     process.exit(1);

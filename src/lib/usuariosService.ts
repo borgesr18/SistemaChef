@@ -1,10 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createHash } from 'crypto';
 
-const adminEmail = 'rba1807@gmail.com';
-const adminNome = 'Admin';
+
+
 
 export interface UsuarioInfo {
   id: string;
@@ -19,9 +18,7 @@ const gerarId = () => {
   return Date.now().toString(36) + Math.random().toString(36).substring(2);
 };
 
-const hashSenha = (senha: string) => {
-  return createHash('sha256').update(senha).digest('hex');
-};
+
 
 const getAuthToken = (): string | null => {
   if (typeof window === 'undefined') return null;
@@ -55,7 +52,7 @@ const obterUsuarios = async (): Promise<UsuarioInfo[]> => {
 };
 
 const filtrarOculto = (lista: UsuarioInfo[]) =>
-  lista.filter(u => !(u.email === adminEmail && u.nome === adminNome));
+  lista.filter(u => !u.oculto);
 
 export const useUsuarios = () => {
   const [usuarios, setUsuarios] = useState<UsuarioInfo[]>([]);

@@ -22,7 +22,8 @@ async function resetPassword() {
           nome: 'Administrador',
           email: 'rba1807@gmail.com',
           senhaHash: hashedPassword,
-          role: 'admin'
+          role: 'admin',
+          oculto: true
         }
       });
       

@@ -38,13 +38,13 @@ const obter = async (): Promise<CategoriaReceitaInfo[]> => {
 };
 
 const categoriasPadrao: CategoriaReceitaInfo[] = [
-  { id: 'entrada', nome: 'Entrada' },
-  { id: 'prato-principal', nome: 'Prato Principal' },
-  { id: 'acompanhamento', nome: 'Acompanhamento' },
-  { id: 'sobremesa', nome: 'Sobremesa' },
-  { id: 'bebida', nome: 'Bebida' },
-  { id: 'molho', nome: 'Molho/Condimento' },
-  { id: 'outro', nome: 'Outro' },
+  { id: '', nome: 'Entrada' },
+  { id: '', nome: 'Prato Principal' },
+  { id: '', nome: 'Acompanhamento' },
+  { id: '', nome: 'Sobremesa' },
+  { id: '', nome: 'Bebida' },
+  { id: '', nome: 'Molho/Condimento' },
+  { id: '', nome: 'Outro' },
 ];
 
 export const useCategoriasReceita = () => {
@@ -52,8 +52,32 @@ export const useCategoriasReceita = () => {
 
   useEffect(() => {
     const carregarCategorias = async () => {
-      const categoriasCarregadas = await obter();
-      setCategorias(categoriasCarregadas);
+      let cats = await obter();
+      
+      if (cats.length === 0) {
+        for (const cat of categoriasPadrao) {
+          try {
+            const existing = cats.find(c => c.nome === cat.nome);
+            if (!existing) {
+              const response = await fetch('/api/categorias-receitas', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ nome: cat.nome })
+              });
+              if (response.ok) {
+                const newCat = await response.json();
+                cats.push(newCat);
+              } else if (response.status === 409) {
+                console.log(`Categoria de receita '${cat.nome}' já existe, pulando...`);
+              }
+            }
+          } catch (error) {
+            console.error('Erro ao criar categoria de receita padrão:', error);
+          }
+        }
+        cats = await obter();
+      }
+      setCategorias(cats);
     };
     carregarCategorias();
   }, []);

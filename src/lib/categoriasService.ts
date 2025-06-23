@@ -55,19 +55,29 @@ export const useCategorias = () => {
   useEffect(() => {
     const carregarCategorias = async () => {
       let cats = await obterCategorias();
+      
       if (cats.length === 0) {
-        cats = categoriasPadrao;
         for (const cat of categoriasPadrao) {
           try {
-            await fetch('/api/categorias', {
-              method: 'POST',
-              headers: getAuthHeaders(),
-              body: JSON.stringify({ nome: cat.nome })
-            });
+            const existing = cats.find(c => c.nome === cat.nome);
+            if (!existing) {
+              const response = await fetch('/api/categorias', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ nome: cat.nome })
+              });
+              if (response.ok) {
+                const newCat = await response.json();
+                cats.push(newCat);
+              } else if (response.status === 409) {
+                console.log(`Categoria '${cat.nome}' já existe, pulando...`);
+              }
+            }
           } catch (error) {
             console.error('Erro ao criar categoria padrão:', error);
           }
         }
+        cats = await obterCategorias();
       }
       setCategorias(cats);
     };

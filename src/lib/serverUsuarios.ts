@@ -76,4 +76,4 @@ export const findByEmail = async (email: string) => {
 
 /** Validação de senha forte */
 export const senhaForte = (senha: string) =>
-  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{6,}$/.test(senha);
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/.test(senha);
