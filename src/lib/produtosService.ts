@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useFichasTecnicas, FichaTecnicaInfo, IngredienteFicha } from './fichasTecnicasService';
+import { getAuthHeaders } from './apiClient';
 
 // Tipos para produtos
 export interface ProdutoInfo {
@@ -42,18 +43,7 @@ const gerarId = () => {
 };
 
 // Função para obter token de autenticação
-const getAuthToken = (): string | null => {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem('auth_token');
-};
 
-const getAuthHeaders = () => {
-  const token = getAuthToken();
-  return {
-    'Content-Type': 'application/json',
-    ...(token && { 'Authorization': `Bearer ${token}` })
-  };
-};
 
 // Função para obter produtos da API
 export const obterProdutos = async (): Promise<ProdutoInfo[]> => {

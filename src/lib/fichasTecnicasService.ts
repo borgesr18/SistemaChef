@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { ProdutoInfo, obterProdutos } from './produtosService';
+import { getAuthHeaders } from './apiClient';
 
 // Tipos para fichas técnicas
 export interface IngredienteFicha {
@@ -68,18 +69,7 @@ const gerarId = () => {
 };
 
 // Função para obter token de autenticação
-const getAuthToken = (): string | null => {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem('auth_token');
-};
 
-const getAuthHeaders = () => {
-  const token = getAuthToken();
-  return {
-    'Content-Type': 'application/json',
-    ...(token && { 'Authorization': `Bearer ${token}` })
-  };
-};
 
 // Função para obter fichas técnicas da API
 export const obterFichasTecnicas = async (): Promise<FichaTecnicaInfo[]> => {
@@ -155,6 +145,8 @@ export const useFichasTecnicas = () => {
     setIsLoading,
     obterFichaTecnicaPorId: (id: string) => fichasTecnicas.find((f: FichaTecnicaInfo) => f.id === id),
     calcularRendimentoTotal,
+    atualizarFichaTecnica: atualizarFichaTecnica,
+    removerFichaTecnica: removerFichaTecnica,
   };
 };
 
