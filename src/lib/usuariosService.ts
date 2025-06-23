@@ -72,7 +72,8 @@ export const useUsuarios = () => {
         console.log('🔍 Carregando usuários...');
         const armazenados = await obterUsuarios();
         console.log('✅ Usuários carregados:', armazenados?.length || 0);
-        setUsuarios(filtrarOculto(armazenados));
+        console.log('🔍 Usuários após filtro oculto:', filtrarOculto(armazenados)?.length || 0);
+        setUsuarios(armazenados);
       } catch (error) {
         console.error('❌ Erro ao carregar usuários:', error);
         setUsuarios([]);
