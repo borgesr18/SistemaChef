@@ -55,6 +55,7 @@ npx prisma studio
 ```bash
 node scripts/seed-categorias-produtos.js
 node scripts/seed-categorias-receitas.js
+node scripts/seed-unidades.js
 ```
 
 ### Verificar logs do servidor
