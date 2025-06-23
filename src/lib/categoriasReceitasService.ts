@@ -22,17 +22,24 @@ const getAuthHeaders = () => {
 
 const obter = async (): Promise<CategoriaReceitaInfo[]> => {
   try {
+    console.log('🔍 Buscando categorias de receitas...');
     const response = await fetch('/api/categorias-receitas', {
       headers: getAuthHeaders()
     });
     
+    console.log(`📡 Response status: ${response.status}`);
+    
     if (!response.ok) {
-      throw new Error('Erro ao buscar categorias de receitas');
+      const errorText = await response.text();
+      console.error(`❌ Erro na API categorias-receitas: ${response.status} - ${errorText}`);
+      throw new Error(`Erro ao buscar categorias de receitas: ${response.status}`);
     }
     
-    return await response.json();
+    const categorias = await response.json();
+    console.log(`✅ Categorias de receitas carregadas: ${categorias.length}`);
+    return categorias;
   } catch (error) {
-    console.error('Erro ao buscar categorias de receitas:', error);
+    console.error('❌ Erro ao buscar categorias de receitas:', error);
     return [];
   }
 };
