@@ -1,6 +1,3 @@
-// This is your Prisma schema file.
-// Learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,102 +8,90 @@ datasource db {
 }
 
 model Usuario {
-  id        String   @id @default(cuid())
-  nome      String
-  email     String   @unique
-  senhaHash String
-  role      String   @default("viewer") // admin, editor, viewer, manager
-  oculto    Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relacionamentos
-  fichasTecnicas        FichaTecnica[]
-  estoqueMovimentacoes  EstoqueMovimentacao[]
+  id                   String                @id @default(cuid())
+  nome                 String
+  email                String                @unique
+  senhaHash            String
+  role                 String                @default("viewer")
+  oculto               Boolean               @default(false)
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  estoqueMovimentacoes EstoqueMovimentacao[]
+  fichasTecnicas       FichaTecnica[]
   producoes            Producao[]
 
   @@map("usuarios")
 }
 
 model Categoria {
-  id   String @id @default(cuid())
-  nome String @unique
-
-  // Relacionamentos
-  produtos       Produto[]
+  id       String    @id @default(cuid())
+  nome     String    @unique
+  produtos Produto[]
 
   @@map("categorias")
 }
 
 model Unidade {
-  id   String @id // sigla da unidade ex: kg, g
-  nome String // nome legivel
-
-  // Relacionamentos
+  id       String    @id
+  nome     String
   produtos Produto[]
 
   @@map("unidades")
 }
 
 model Produto {
-  id             String  @id @default(cuid())
-  nome           String
-  categoria      String? // referência à categoria
-  marca          String?
-  unidadeMedida  String  // referência à unidade
-  preco          Float
-  precoUnitario  Float?
-  fornecedor     String?
-  pesoEmbalagem  Float?
-  infoNutricional Json?  // armazena objeto com informações nutricionais
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  // Relacionamentos
-  categoriaRef         Categoria? @relation(fields: [categoria], references: [id])
-  unidadeRef          Unidade?   @relation(fields: [unidadeMedida], references: [id])
-  ingredientesFicha   IngredienteFicha[]
+  id                   String                @id @default(cuid())
+  nome                 String
+  categoria            String?
+  marca                String?
+  unidadeMedida        String
+  preco                Float
+  precoUnitario        Float?
+  fornecedor           String?
+  pesoEmbalagem        Float?
+  infoNutricional      Json?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
   estoqueMovimentacoes EstoqueMovimentacao[]
+  ingredientesFicha    IngredienteFicha[]
+  categoriaRef         Categoria?            @relation(fields: [categoria], references: [id])
+  unidadeRef           Unidade               @relation(fields: [unidadeMedida], references: [id])
 
   @@map("produtos")
 }
 
 model FichaTecnica {
-  id              String   @id @default(cuid())
-  nome            String
-  descricao       String?
-  categoria       String   // categoria da receita
-  modoPreparo     String?
-  tempoPreparo    String?
-  rendimentoTotal Float?
+  id                String                        @id @default(cuid())
+  nome              String
+  descricao         String?
+  categoria         String
+  modoPreparo       String?
+  tempoPreparo      String?
+  rendimentoTotal   Float?
   unidadeRendimento String?
-  custoTotal      Float    @default(0)
-  custoPorcao     Float    @default(0)
-  observacoes     String?
-  userId          String
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  // Relacionamentos
-  user               Usuario            @relation(fields: [userId], references: [id])
-  ingredientes       IngredienteFicha[]
-  producoes          Producao[]
-  estoqueProducao    EstoqueProducaoMovimentacao[]
+  custoTotal        Float                         @default(0)
+  custoPorcao       Float                         @default(0)
+  observacoes       String?
+  userId            String
+  createdAt         DateTime                      @default(now())
+  updatedAt         DateTime                      @updatedAt
+  estoqueProducao   EstoqueProducaoMovimentacao[]
+  user              Usuario                       @relation(fields: [userId], references: [id])
+  ingredientes      IngredienteFicha[]
+  producoes         Producao[]
 
   @@map("fichas_tecnicas")
 }
 
 model IngredienteFicha {
-  id         String @id @default(cuid())
+  id         String       @id @default(cuid())
   fichaId    String
   produtoId  String
   quantidade Float
   unidade    String
-  custo      Float  @default(0)
-
-  // Relacionamentos
-  ficha   FichaTecnica @relation(fields: [fichaId], references: [id], onDelete: Cascade)
-  produto Produto      @relation(fields: [produtoId], references: [id])
+  custo      Float        @default(0)
+  ficha      FichaTecnica @relation(fields: [fichaId], references: [id], onDelete: Cascade)
+  produto    Produto      @relation(fields: [produtoId], references: [id])
 
   @@map("ingredientes_ficha")
 }
@@ -119,20 +104,18 @@ model EstoqueMovimentacao {
   fornecedor String?
   marca      String?
   data       DateTime @default(now())
-  tipo       String   // entrada, saida
+  tipo       String
   userId     String
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
-
-  // Relacionamentos
-  produto Produto @relation(fields: [produtoId], references: [id])
-  user    Usuario @relation(fields: [userId], references: [id])
+  produto    Produto  @relation(fields: [produtoId], references: [id])
+  user       Usuario  @relation(fields: [userId], references: [id])
 
   @@map("estoque_movimentacoes")
 }
 
 model Producao {
-  id                String   @id @default(cuid())
+  id                String       @id @default(cuid())
   fichaId           String
   quantidadeTotal   Float
   unidadeQuantidade String?
@@ -142,47 +125,43 @@ model Producao {
   custoTotal        Float
   custoUnitario     Float
   validade          String?
-  data              DateTime @default(now())
+  data              DateTime     @default(now())
   userId            String
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  // Relacionamentos
-  ficha FichaTecnica @relation(fields: [fichaId], references: [id])
-  user  Usuario      @relation(fields: [userId], references: [id])
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  ficha             FichaTecnica @relation(fields: [fichaId], references: [id])
+  user              Usuario      @relation(fields: [userId], references: [id])
 
   @@map("producoes")
 }
 
 model EstoqueProducaoMovimentacao {
-  id         String   @id @default(cuid())
+  id         String       @id @default(cuid())
   fichaId    String
   quantidade Float
   validade   String?
-  data       DateTime @default(now())
-  tipo       String   // entrada, saida
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  // Relacionamentos
-  ficha FichaTecnica @relation(fields: [fichaId], references: [id])
+  data       DateTime     @default(now())
+  tipo       String
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  ficha      FichaTecnica @relation(fields: [fichaId], references: [id])
 
   @@map("estoque_producao_movimentacoes")
 }
 
 model PrecoVenda {
-  id           String @id @default(cuid())
-  producaoId   String
-  fichaId      String
+  id            String   @id @default(cuid())
+  producaoId    String
+  fichaId       String
   custoUnitario Float
-  lucro1       Float
-  preco1       Float
-  lucro2       Float
-  preco2       Float
-  lucro3       Float
-  preco3       Float
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  lucro1        Float
+  preco1        Float
+  lucro2        Float
+  preco2        Float
+  lucro3        Float
+  preco3        Float
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   @@map("precos_venda")
 }
