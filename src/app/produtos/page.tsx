@@ -5,7 +5,7 @@ import Card from '@/components/ui/Card';
 import Table, { TableRow, TableCell } from '@/components/ui/Table';
 import Button from '@/components/ui/Button';
 import SlideOver from '@/components/ui/SlideOver';
-import { useProdutos, ProdutoInfo, obterLabelCategoria } from '@/lib/produtosService';
+import { useProdutos, ProdutoInfo, obterLabelCategoriaFromRef } from '@/lib/produtosService';
 import Link from 'next/link';
 
 export default React.memo(function ProdutosPage() {
@@ -56,7 +56,7 @@ export default React.memo(function ProdutosPage() {
                 onClick={() => setSelecionado(produto)}
               >
                 <TableCell className="font-medium text-gray-700">{produto.nome}</TableCell>
-                <TableCell>{obterLabelCategoria(produto.categoria)}</TableCell>
+                <TableCell>{obterLabelCategoriaFromRef(produto)}</TableCell>
                 <TableCell>{produto.unidadeMedida}</TableCell>
                 <TableCell>{formatarPreco(produto.preco)}</TableCell>
                 <TableCell>{produto.fornecedor}</TableCell>
@@ -71,7 +71,7 @@ export default React.memo(function ProdutosPage() {
       >
         {selecionado && (
           <div className="space-y-4">
-            <p className="text-sm text-gray-600">Categoria: {obterLabelCategoria(selecionado.categoria)}</p>
+            <p className="text-sm text-gray-600">Categoria: {obterLabelCategoriaFromRef(selecionado)}</p>
             <p className="text-sm text-gray-600">Preço: {formatarPreco(selecionado.preco)}</p>
             <div className="flex flex-col space-y-2">
               <Link href={`/produtos/${selecionado.id}`}> <Button variant="secondary" fullWidth>Ver</Button> </Link>

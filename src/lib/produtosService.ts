@@ -59,12 +59,14 @@ export const obterProdutos = async (): Promise<ProdutoInfo[]> => {
     const produtos = await response.json();
     return produtos.map((p: any) => ({
       ...p,
-      categoria: p.categoria ?? '',
+      categoria: p.categoriaRef?.nome || p.categoria || '',
+      categoriaId: p.categoria,
       preco: Number(p.preco) || 0,
       precoUnitario: p.precoUnitario ? Number(p.precoUnitario) : undefined,
       pesoEmbalagem: p.pesoEmbalagem ? Number(p.pesoEmbalagem) : undefined,
       categoriaRef: p.categoriaRef,
       unidadeRef: p.unidadeRef,
+      unidadeMedida: p.unidadeRef?.nome || p.unidadeMedida,
       infoNutricional: p.infoNutricional
         ? {
             calorias: Number(p.infoNutricional.calorias) || 0,
@@ -225,21 +227,42 @@ export const categoriasProdutos = [
 ];
 
 // Obter rótulo legível de uma categoria pelo valor armazenado
-export const obterLabelCategoria = (valor: string, categoriaRef?: { id: string; nome: string }) => {
-  if (!valor) return 'Não informado';
+export const obterLabelCategoria = (categoriaId: string | null, categorias: any[] = []): string => {
+  if (!categoriaId) return 'Não informado';
   
-  if (categoriaRef && categoriaRef.nome) {
-    return categoriaRef.nome;
-  }
+  const categoria = categorias.find(c => c.id === categoriaId);
+  if (categoria) return categoria.nome;
   
-  const encontrado = categoriasProdutos.find(c => c.value === valor);
+  const categoriaPorNome = categorias.find(c => c.nome === categoriaId);
+  if (categoriaPorNome) return categoriaPorNome.nome;
+  
+  const encontrado = categoriasProdutos.find(c => c.value === categoriaId);
   if (encontrado) {
     return encontrado.label;
   }
   
-  if (valor.length > 10 && valor.includes('c')) {
+  if (categoriaId.length > 10 && (categoriaId.includes('-') || categoriaId.includes('c'))) {
     return 'Categoria não encontrada';
   }
   
-  return valor;
+  return categoriaId;
+};
+
+export const obterLabelCategoriaFromRef = (produto: ProdutoInfo): string => {
+  if (produto.categoriaRef?.nome) {
+    return produto.categoriaRef.nome;
+  }
+  
+  if (produto.categoria && produto.categoria !== 'null' && produto.categoria.trim() !== '') {
+    if (produto.categoria.length < 20 && !produto.categoria.includes('-') && !produto.categoria.startsWith('c')) {
+      return produto.categoria;
+    }
+    
+    const categoriaEncontrada = categoriasProdutos.find(c => c.value === produto.categoria);
+    if (categoriaEncontrada) {
+      return categoriaEncontrada.label;
+    }
+  }
+  
+  return 'Não informado';
 };

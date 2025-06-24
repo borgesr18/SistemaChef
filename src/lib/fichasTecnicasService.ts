@@ -150,6 +150,40 @@ export const useFichasTecnicas = () => {
   };
 };
 
+export const obterFichaTecnicaPorId = async (id: string): Promise<FichaTecnicaInfo | null> => {
+  try {
+    const response = await fetch(`/api/fichas-tecnicas/${id}`, {
+      headers: getAuthHeaders()
+    });
+    
+    if (!response.ok) {
+      if (response.status === 404) {
+        return null;
+      }
+      throw new Error('Erro ao buscar ficha técnica');
+    }
+    
+    const data = await response.json();
+    
+    return {
+      ...data,
+      dataCriacao: data.createdAt ? new Date(data.createdAt).toLocaleDateString('pt-BR') : 'Data não disponível',
+      dataModificacao: data.updatedAt 
+        ? new Date(data.updatedAt).toLocaleDateString('pt-BR') 
+        : 'Data não disponível',
+      tempoPreparo: parseInt(data.tempoPreparo) || 0,
+      custoTotal: Number(data.custoTotal) || 0,
+      custoPorcao: Number(data.custoPorcao) || 0,
+      custoPorKg: data.custoTotal && data.rendimentoTotal 
+        ? (data.custoTotal / data.rendimentoTotal) * 1000 
+        : 0
+    };
+  } catch (error) {
+    console.error('Erro ao buscar ficha técnica por ID:', error);
+    return null;
+  }
+};
+
 export const adicionarFichaTecnica = async (ficha: Omit<FichaTecnicaInfo, 'id' | 'custoTotal' | 'custoPorcao' | 'infoNutricional' | 'infoNutricionalPorcao' | 'dataCriacao' | 'dataModificacao'>) => {
   try {
     const response = await fetch('/api/fichas-tecnicas', {

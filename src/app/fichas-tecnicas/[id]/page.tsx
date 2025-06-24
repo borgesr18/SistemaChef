@@ -1,24 +1,49 @@
 'use client';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import {
-  useFichasTecnicas,
-  obterLabelCategoriaReceita,
+  FichaTecnicaInfo,
+  obterFichaTecnicaPorId,
+  removerFichaTecnica,
   obterLabelUnidadeRendimento,
 } from '@/lib/fichasTecnicasService';
+import { useCategoriasReceita, obterLabelCategoriaReceita } from '@/lib/categoriasReceitasService';
 import { useProdutos } from '@/lib/produtosService';
 import Table, { TableRow, TableCell } from '@/components/ui/Table';
 
 export default function DetalheFichaTecnicaPage() {
   const params = useParams();
   const router = useRouter();
-  const { obterFichaTecnicaPorId, removerFichaTecnica } = useFichasTecnicas();
+  const [ficha, setFicha] = useState<FichaTecnicaInfo | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const { produtos } = useProdutos();
+  const { categorias: categoriasReceitas } = useCategoriasReceita();
   
   const fichaId = params.id as string;
-  const ficha = obterFichaTecnicaPorId(fichaId);
+  
+  useEffect(() => {
+    const loadFicha = async () => {
+      try {
+        setIsLoading(true);
+        const fichaData = await obterFichaTecnicaPorId(fichaId);
+        setFicha(fichaData);
+      } catch (error) {
+        console.error('Erro ao carregar ficha técnica:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    if (fichaId) {
+      loadFicha();
+    }
+  }, [fichaId]);
+  
+  if (isLoading) {
+    return <div className="text-center py-12">Carregando...</div>;
+  }
   
   if (!ficha) {
     return (
@@ -32,10 +57,19 @@ export default function DetalheFichaTecnicaPage() {
     );
   }
 
-  const handleRemover = () => {
+  const handleRemover = async () => {
     if (confirm('Tem certeza que deseja remover esta ficha técnica?')) {
-      removerFichaTecnica(fichaId);
-      router.push('/fichas-tecnicas');
+      try {
+        const success = await removerFichaTecnica(fichaId);
+        if (success) {
+          router.push('/fichas-tecnicas');
+        } else {
+          alert('Erro ao remover ficha técnica');
+        }
+      } catch (error) {
+        console.error('Erro ao remover ficha técnica:', error);
+        alert('Erro ao remover ficha técnica');
+      }
     }
   };
 
@@ -47,12 +81,27 @@ export default function DetalheFichaTecnicaPage() {
   };
 
   const formatarData = (dataString: string) => {
-    const data = new Date(dataString);
-    return new Intl.DateTimeFormat('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    }).format(data);
+    if (dataString === 'Data não disponível') {
+      return dataString;
+    }
+    
+    if (dataString.includes('/')) {
+      return dataString;
+    }
+    
+    try {
+      const data = new Date(dataString);
+      if (isNaN(data.getTime())) {
+        return 'Data não disponível';
+      }
+      return new Intl.DateTimeFormat('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      }).format(data);
+    } catch (error) {
+      return 'Data não disponível';
+    }
   };
 
   // Obter nome do produto pelo ID
@@ -111,7 +160,7 @@ export default function DetalheFichaTecnicaPage() {
           </div>
           <div>
             <h3 className="text-sm font-medium text-gray-500">Categoria</h3>
-            <p className="mt-1 text-lg font-medium text-gray-900">{obterLabelCategoriaReceita(ficha.categoria)}</p>
+            <p className="mt-1 text-lg font-medium text-gray-900">{obterLabelCategoriaReceita(ficha.categoria, categoriasReceitas)}</p>
           </div>
           <div>
             <h3 className="text-sm font-medium text-gray-500">Tempo de Preparo</h3>

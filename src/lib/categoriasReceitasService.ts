@@ -173,5 +173,11 @@ export const useCategoriasReceita = () => {
 export const obterLabelCategoriaReceita = (id: string, categorias: CategoriaReceitaInfo[] = []) => {
   if (!id) return 'Não informado';
   const cat = categorias.find(c => c.id === id);
-  return cat ? cat.nome : id;
+  if (cat) return cat.nome;
+  
+  if (id.length > 20) {
+    return 'Categoria não encontrada';
+  }
+  
+  return id;
 };

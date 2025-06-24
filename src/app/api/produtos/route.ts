@@ -8,9 +8,13 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Database not available during build' }, { status: 503 });
     }
     
-    await requireAuth(req);
+    const user = await requireAuth(req);
     
     const produtos = await prisma.produto.findMany({
+      include: {
+        categoriaRef: true,
+        unidadeRef: true
+      },
       orderBy: { nome: 'asc' }
     });
 
@@ -30,7 +34,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Database not available during build' }, { status: 503 });
     }
     
-    await requireAuth(req);
+    const user = await requireAuth(req);
     
     const data = await req.json();
     
