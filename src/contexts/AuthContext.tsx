@@ -1,9 +1,9 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
-import { createBrowserClient } from '@supabase/ssr';
 import { User, Session } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase-browser'; // ✅ Importando client singleton
 
 type AuthContextType = {
   user: User | null;
@@ -21,33 +21,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-
   useEffect(() => {
     const getSession = async () => {
       const { data } = await supabase.auth.getSession();
-      if (data.session) {
-        setSession(data.session);
-        setUser(data.session.user);
-      } else {
-        setSession(null);
-        setUser(null);
-      }
+      setSession(data.session);
+      setUser(data.session?.user || null);
       setLoading(false);
     };
 
     getSession();
 
-    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-      setSession(session);
-      setUser(session?.user || null);
-    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setSession(session);
+        setUser(session?.user || null);
+      }
+    );
 
     return () => {
-      listener.subscription.unsubscribe();
+      subscription.unsubscribe();
     };
   }, []);
 
@@ -63,13 +55,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       throw error;
     }
 
-    if (data.session) {
-      setSession(data.session);
-      setUser(data.session.user);
-    }
-
+    setSession(data.session);
+    setUser(data.session.user);
     setLoading(false);
-    router.push('/'); // Redireciona para o dashboard após login
+    router.push('/');
   };
 
   const signOut = async () => {
@@ -93,4 +82,3 @@ export const useAuth = () => {
   }
   return context;
 };
-
