@@ -1,12 +1,11 @@
 // Este é um SERVER COMPONENT – não deve ter 'use client'
 
-import { supabaseServer } from '@/lib/supabase-server'
+import { createSupabaseServerClient } from '@/lib/supabase-server-component'
 import { redirect } from 'next/navigation'
 
 export default async function UsuariosPage() {
-  const supabase = supabaseServer()
+  const supabase = createSupabaseServerClient()
 
-  // Verifica se o usuário está logado
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -15,7 +14,6 @@ export default async function UsuariosPage() {
     return redirect('/login')
   }
 
-  // Busca todos os perfis de usuários
   const { data: usuarios, error } = await supabase
     .from('perfis_usuarios')
     .select('*')
