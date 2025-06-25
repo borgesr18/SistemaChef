@@ -1,32 +1,18 @@
 // /src/app/layout.tsx
-import "./globals.css";
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import MainLayout from "@/components/layout/MainLayout";
-import { AuthProvider } from "@/contexts/AuthContext";
+import './globals.css';
+import { supabaseServer } from '@/lib/supabase-server';
 
-const inter = Inter({ subsets: ["latin"] });
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const supabase = supabaseServer();
+  const { data: { user } } = await supabase.auth.getUser();
 
-export const metadata: Metadata = {
-  title: "GastroChef",
-  description: "Sistema de fichas técnicas e controle de produção",
-};
-
-export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR">
-      <head>
-        {/* ✅ Link para carregar os ícones do Material Icons */}
-        <link
-          href="https://fonts.googleapis.com/icon?family=Material+Icons"
-          rel="stylesheet"
-        />
-      </head>
-      <body className={inter.className}>
-        <AuthProvider>
-          <MainLayout>{children}</MainLayout>
-        </AuthProvider>
+    <html lang="pt-br">
+      <body>
+        {/* Opcional: passar "user" por contexto */}
+        {children}
       </body>
     </html>
   );
 }
+i
