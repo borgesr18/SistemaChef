@@ -9,6 +9,7 @@ type AuthContextType = {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  login: (email: string, password: string) => Promise<void>;
   signOut: () => void;
 };
 
@@ -27,7 +28,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     const getSession = async () => {
-      const { data, error } = await supabase.auth.getSession();
+      const { data } = await supabase.auth.getSession();
       if (data.session) {
         setSession(data.session);
         setUser(data.session.user);
@@ -40,17 +41,36 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     getSession();
 
-    const { data: listener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user || null);
-      }
-    );
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      setSession(session);
+      setUser(session?.user || null);
+    });
 
     return () => {
       listener.subscription.unsubscribe();
     };
   }, []);
+
+  const login = async (email: string, password: string) => {
+    setLoading(true);
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      setLoading(false);
+      throw error;
+    }
+
+    if (data.session) {
+      setSession(data.session);
+      setUser(data.session.user);
+    }
+
+    setLoading(false);
+    router.push('/'); // Redireciona para o dashboard após login
+  };
 
   const signOut = async () => {
     await supabase.auth.signOut();
@@ -60,7 +80,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, login, signOut }}>
       {children}
     </AuthContext.Provider>
   );
