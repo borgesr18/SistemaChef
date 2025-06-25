@@ -3,7 +3,7 @@ import "./globals.css";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import MainLayout from "@/components/layout/MainLayout";
-import { AuthProvider } from "@/contexts/AuthContext"; // 👈 Importação correta do novo contexto
+import { AuthProvider } from "@/contexts/AuthContext";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -15,8 +15,15 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR">
+      <head>
+        {/* ✅ Link para carregar os ícones do Material Icons */}
+        <link
+          href="https://fonts.googleapis.com/icon?family=Material+Icons"
+          rel="stylesheet"
+        />
+      </head>
       <body className={inter.className}>
-        <AuthProvider> {/* ✅ Envolvendo toda a aplicação com o contexto */}
+        <AuthProvider>
           <MainLayout>{children}</MainLayout>
         </AuthProvider>
       </body>
