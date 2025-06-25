@@ -1,21 +1,37 @@
 // middleware.ts
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
+import { type Database } from './lib/database.types'
 
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+export async function middleware(req: NextRequest) {
+  const res = NextResponse.next()
 
-export function middleware(request: NextRequest) {
-  const token = request.cookies.get('sb-access-token')?.value;
+  const supabase = createMiddlewareClient<Database>({ req, res })
 
-  const protectedPaths = ['/', '/produtos', '/fichas-tecnicas', '/relatorios', '/configuracoes'];
-  const isProtected = protectedPaths.some((path) => request.nextUrl.pathname.startsWith(path));
+  // Revalida a sessão do usuário com base no cookie
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
 
-  if (!token && isProtected) {
-    return NextResponse.redirect(new URL('/login', request.url));
+  // Redireciona para login se não estiver autenticado
+  if (!session && req.nextUrl.pathname.startsWith('/configuracoes')) {
+    const redirectUrl = new URL('/login', req.url)
+    redirectUrl.searchParams.set('redirectedFrom', req.nextUrl.pathname)
+    return NextResponse.redirect(redirectUrl)
   }
 
-  return NextResponse.next();
+  return res
 }
 
+// Define as rotas que usam o middleware
 export const config = {
-  matcher: ['/((?!_next|api|login|public).*)'],
-};
+  matcher: [
+    '/configuracoes/:path*',
+    '/dashboard/:path*',
+    '/fichas-tecnicas/:path*',
+    '/estoque/:path*',
+    '/produtos/:path*',
+    '/usuarios/:path*',
+  ],
+}
