@@ -4,8 +4,8 @@
 
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Input } from "@/components/ui/Input";
-import { Button } from "@/components/ui/Button";
+import Input from "@/components/ui/Input";
+import Button from "@/components/ui/Button";
 
 export default function LoginPage() {
   const { login, loading, user } = useAuth();
