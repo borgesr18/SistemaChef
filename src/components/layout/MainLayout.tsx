@@ -3,7 +3,7 @@
 import React, { ReactNode, useEffect } from 'react';
 import Header from './Header';
 import Sidebar from './Sidebar';
-import { useUsuarios } from '@/lib/usuariosService';
+import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 
 interface MainLayoutProps {
@@ -11,18 +11,21 @@ interface MainLayoutProps {
 }
 
 const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
-  const { usuarioAtual } = useUsuarios();
+  const { user, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
-    if (!usuarioAtual && pathname !== '/login' && pathname !== '/usuarios/novo') {
+    if (loading) return;
+
+    if (!user && pathname !== '/login' && pathname !== '/usuarios/novo') {
       router.push('/login');
     }
-    if (usuarioAtual && (pathname === '/login' || pathname === '/usuarios/novo')) {
+
+    if (user && (pathname === '/login' || pathname === '/usuarios/novo')) {
       router.push('/');
     }
-  }, [usuarioAtual, pathname, router]);
+  }, [user, loading, pathname, router]);
 
   const hideLayout =
     pathname === '/login' ||
@@ -36,7 +39,14 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         {!hideLayout && <Header />}
         <main className="flex-1 overflow-y-auto p-4 md:p-6">{children}</main>
         {!hideLayout && (
-          <footer className="p-4 text-center text-sm border-t" style={{ backgroundColor: 'white', color: 'var(--cor-texto-secundario)', borderColor: 'var(--cor-borda)' }}>
+          <footer
+            className="p-4 text-center text-sm border-t"
+            style={{
+              backgroundColor: 'white',
+              color: 'var(--cor-texto-secundario)',
+              borderColor: 'var(--cor-borda)',
+            }}
+          >
             CustoChef &copy; {new Date().getFullYear()}
           </footer>
         )}
@@ -46,3 +56,4 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 };
 
 export default MainLayout;
+
