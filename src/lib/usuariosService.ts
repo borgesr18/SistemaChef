@@ -8,7 +8,7 @@ export interface PerfilUsuario {
   id: number;
   user_id: string;
   nome: string;
-  perfil: 'admin' | 'editor' | 'viewer' | 'manager';
+  role: 'admin' | 'editor' | 'viewer' | 'manager';
   ativo: boolean;
   created_at: string;
 }
@@ -93,7 +93,7 @@ export const useUsuarios = () => {
       .insert({
         user_id: data.user.id,
         nome,
-        perfil: role,
+        role,
         ativo: true,
       });
 
@@ -112,7 +112,7 @@ export const useUsuarios = () => {
   ) => {
     const { error } = await supabase
       .from('perfis_usuarios')
-      .update({ nome, perfil: role })
+      .update({ nome, role })
       .eq('id', id);
 
     if (error) {
