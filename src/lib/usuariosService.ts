@@ -8,7 +8,7 @@ export interface PerfilUsuario {
   id: number;
   user_id: string;
   nome: string;
-  perfil: string;
+  perfil: 'admin' | 'editor' | 'viewer' | 'manager';
   ativo: boolean;
   created_at: string;
 }
@@ -47,15 +47,18 @@ export const useUsuarios = () => {
       return;
     }
 
-    setUsuarios(data);
+    setUsuarios(data || []);
   };
 
   useEffect(() => {
-    if (user) {
-      carregarUsuarioAtual();
-      carregarTodos();
-    }
-    setIsLoading(false);
+    const fetch = async () => {
+      if (user) {
+        await carregarUsuarioAtual();
+        await carregarTodos();
+      }
+      setIsLoading(false);
+    };
+    fetch();
   }, [user]);
 
   const logout = async () => {
@@ -63,10 +66,101 @@ export const useUsuarios = () => {
     setUsuarioAtual(null);
   };
 
+  const registrarUsuario = async ({
+    nome,
+    email,
+    senha,
+    role,
+  }: {
+    nome: string;
+    email: string;
+    senha: string;
+    role: 'admin' | 'editor' | 'viewer' | 'manager';
+  }) => {
+    const { data, error } = await supabase.auth.admin.createUser({
+      email,
+      password: senha,
+      email_confirm: true,
+    });
+
+    if (error || !data?.user?.id) {
+      console.error('Erro ao criar usuário:', error);
+      return false;
+    }
+
+    const { error: insertError } = await supabase
+      .from('perfis_usuarios')
+      .insert({
+        user_id: data.user.id,
+        nome,
+        perfil: role,
+        ativo: true,
+      });
+
+    if (insertError) {
+      console.error('Erro ao inserir perfil:', insertError);
+      return false;
+    }
+
+    await carregarTodos();
+    return true;
+  };
+
+  const editarUsuario = async (
+    id: number | string,
+    { nome, role }: { nome: string; role: 'admin' | 'editor' | 'viewer' | 'manager' }
+  ) => {
+    const { error } = await supabase
+      .from('perfis_usuarios')
+      .update({ nome, perfil: role })
+      .eq('id', id);
+
+    if (error) {
+      console.error('Erro ao editar usuário:', error);
+      return false;
+    }
+
+    await carregarTodos();
+    return true;
+  };
+
+  const alterarSenha = async (userId: string, novaSenha: string) => {
+    const { error } = await supabase.auth.admin.updateUserById(userId, {
+      password: novaSenha,
+    });
+
+    if (error) {
+      console.error('Erro ao alterar senha:', error);
+      return false;
+    }
+
+    return true;
+  };
+
+  const removerUsuario = async (id: number | string) => {
+    const { error } = await supabase
+      .from('perfis_usuarios')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Erro ao remover usuário:', error);
+      return false;
+    }
+
+    await carregarTodos();
+    return true;
+  };
+
   return {
     usuarioAtual,
     usuarios,
     isLoading,
     logout,
+    registrarUsuario,
+    editarUsuario,
+    alterarSenha,
+    removerUsuario,
   };
 };
+
