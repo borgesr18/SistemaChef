@@ -39,6 +39,7 @@ export const obterProdutos = async (): Promise<ProdutoInfo[]> => {
     if (!response.ok) throw new Error('Erro ao buscar produtos');
 
     const produtos = await response.json();
+
     return produtos.map((p: any) => ({
       id: p.id,
       nome: p.nome,
@@ -93,7 +94,10 @@ export const useProdutos = () => {
 
       const response = await fetch('/api/produtos', {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers: {
+          ...getAuthHeaders(),
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(payload),
       });
 
@@ -117,7 +121,10 @@ export const useProdutos = () => {
 
       const response = await fetch(`/api/produtos/${id}`, {
         method: 'PUT',
-        headers: getAuthHeaders(),
+        headers: {
+          ...getAuthHeaders(),
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(payload),
       });
 
@@ -161,11 +168,3 @@ export const useProdutos = () => {
   };
 };
 
-export const obterLabelCategoria = (categoriaId: string, produtos: ProdutoInfo[]) => {
-  const produto = produtos.find(p => p.categoriaId === categoriaId);
-  return produto?.categoriaNome || 'Sem categoria';
-};
-
-export const obterLabelCategoriaFromRef = (ref: any) => {
-  return ref?.nome || 'Sem categoria';
-};
