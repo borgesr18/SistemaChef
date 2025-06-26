@@ -13,8 +13,8 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(categorias);
   } catch (error) {
-    console.error('Erro ao buscar categorias de receitas:', error);
-    return NextResponse.json({ error: 'Erro ao buscar categorias de receitas' }, { status: 500 });
+    console.error('Erro ao listar categorias de receitas:', error);
+    return NextResponse.json({ error: 'Erro ao listar categorias' }, { status: 500 });
   }
 }
 
@@ -22,18 +22,17 @@ export async function POST(req: NextRequest) {
   try {
     await requireAuth(req);
 
-    const body = await req.json();
-    const { nome } = body;
+    const { nome } = await req.json();
 
-    if (!nome || nome.trim() === '') {
+    if (!nome) {
       return NextResponse.json({ error: 'Nome é obrigatório' }, { status: 400 });
     }
 
-    const novaCategoria = await prisma.categoriaReceita.create({
-      data: { nome: nome.trim() },
+    const categoria = await prisma.categoriaReceita.create({
+      data: { nome },
     });
 
-    return NextResponse.json(novaCategoria);
+    return NextResponse.json(categoria);
   } catch (error) {
     console.error('Erro ao criar categoria de receita:', error);
     return NextResponse.json({ error: 'Erro ao criar categoria' }, { status: 500 });
