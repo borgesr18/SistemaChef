@@ -1,10 +1,19 @@
-// /src/app/layout.tsx
+// src/app/layout.tsx
 import './globals.css';
-import { ReactNode } from 'react';
-import { AuthProvider } from '@/contexts/AuthContext';
+import React from 'react';
 import MainLayout from '@/components/layout/MainLayout';
+import { AuthProvider } from '@/contexts/AuthContext';
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export const metadata = {
+  title: 'CustoChef',
+  description: 'Sistema de fichas técnicas e controle de produção',
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="pt-br">
       <body>
@@ -15,3 +24,4 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     </html>
   );
 }
+
