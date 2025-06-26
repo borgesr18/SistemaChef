@@ -5,7 +5,7 @@ import { requireAuth } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
   try {
-    await requireAuth(req);
+    const user = await requireAuth(req);
 
     const unidades = await prisma.unidade.findMany({
       orderBy: { nome: 'asc' },
@@ -14,28 +14,32 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(unidades);
   } catch (error) {
     console.error('Erro ao buscar unidades:', error);
-    return NextResponse.json({ error: 'Erro ao buscar unidades' }, { status: 500 });
+    if (error instanceof Error && error.message === 'Authentication required') {
+      return NextResponse.json({ error: 'Autenticação necessária' }, { status: 401 });
+    }
+    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
-    await requireAuth(req);
+    const user = await requireAuth(req);
+    const { nome } = await req.json();
 
-    const { nome, sigla } = await req.json();
-
-    if (!nome || !sigla) {
-      return NextResponse.json({ error: 'Nome e sigla são obrigatórios' }, { status: 400 });
+    if (!nome || typeof nome !== 'string') {
+      return NextResponse.json({ error: 'Nome inválido' }, { status: 400 });
     }
 
-    const unidade = await prisma.unidade.create({
-      data: { nome, sigla },
+    const nova = await prisma.unidade.create({
+      data: { nome },
     });
 
-    return NextResponse.json(unidade);
+    return NextResponse.json(nova);
   } catch (error) {
     console.error('Erro ao criar unidade:', error);
-    return NextResponse.json({ error: 'Erro ao criar unidade' }, { status: 500 });
+    if (error instanceof Error && error.message === 'Authentication required') {
+      return NextResponse.json({ error: 'Autenticação necessária' }, { status: 401 });
+    }
+    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
   }
 }
-
