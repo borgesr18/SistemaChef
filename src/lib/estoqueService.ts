@@ -24,11 +24,11 @@ const obterMovimentacoes = async (): Promise<MovimentacaoEstoque[]> => {
     const response = await fetch('/api/estoque', {
       headers: getAuthHeaders()
     });
-    
+
     if (!response.ok) {
       throw new Error('Erro ao buscar movimentações');
     }
-    
+
     return await response.json();
   } catch (err) {
     console.error('Erro ao buscar movimentações da API:', err);
@@ -42,14 +42,14 @@ export const useEstoque = () => {
 
   const atualizarProdutoDeEntrada = async (mov: MovimentacaoEstoque) => {
     if (!mov.preco) return;
-    
+
     try {
       const produtos = await obterProdutos();
       const produto = produtos.find(p => p.id === mov.produtoId);
       if (produto) {
         const pesoEmb = produto.pesoEmbalagem || 1;
         const precoUnitario = pesoEmb > 0 ? (mov.preco || produto.preco) / pesoEmb : 0;
-        
+
         const produtoAtualizado = {
           ...produto,
           preco: mov.preco || produto.preco,
@@ -106,9 +106,7 @@ export const useEstoque = () => {
       const novas = [...movimentacoes, nova];
       setMovimentacoes(novas);
 
-      // Atualizar produto com novo preço/fornecedor/marca
       await atualizarProdutoDeEntrada(nova);
-
       return nova;
     } catch (error) {
       console.error('Erro ao registrar entrada:', error);
@@ -158,11 +156,11 @@ export const useEstoque = () => {
       const atualizado = await response.json();
       const novas = movimentacoes.map(m => m.id === id ? atualizado : m);
       setMovimentacoes(novas);
-      
+
       if (atualizado.tipo === 'entrada') {
         await atualizarProdutoDeEntrada(atualizado);
       }
-      
+
       return atualizado;
     } catch (error) {
       console.error('Erro ao atualizar movimentação:', error);
@@ -211,3 +209,4 @@ export const useEstoque = () => {
     calcularEstoqueAtual,
   };
 };
+
