@@ -1,62 +1,66 @@
 // src/lib/categoriasInsumosService.ts
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { apiClient } from './apiClient';
 
 export type CategoriaInsumo = {
   id: string;
   nome: string;
-  created_at?: string;
 };
 
 export function useCategoriasInsumos() {
   const [categorias, setCategorias] = useState<CategoriaInsumo[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [erro, setErro] = useState<string | null>(null);
 
-  const fetchCategorias = useCallback(async () => {
+  const fetchCategorias = async () => {
     setLoading(true);
     try {
       const response = await apiClient.get('/api/categorias-insumos');
+      if (!response.ok) throw new Error('Erro ao buscar categorias');
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Erro ao buscar categorias');
       setCategorias(data);
     } catch (err: any) {
-      setError(err.message);
+      setErro(err.message);
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
-  const adicionarCategoria = useCallback(async (nome: string) => {
+  const criarCategoria = async (nome: string) => {
     const response = await apiClient.post('/api/categorias-insumos', { nome });
-    if (!response.ok) throw new Error('Erro ao adicionar categoria');
-    await fetchCategorias();
-  }, [fetchCategorias]);
+    if (!response.ok) throw new Error('Erro ao criar categoria');
+    const nova = await response.json();
+    setCategorias([...categorias, nova]);
+  };
 
-  const atualizarCategoria = useCallback(async (id: string, nome: string) => {
+  const editarCategoria = async (id: string, nome: string) => {
     const response = await apiClient.put(`/api/categorias-insumos/${id}`, { nome });
-    if (!response.ok) throw new Error('Erro ao atualizar categoria');
-    await fetchCategorias();
-  }, [fetchCategorias]);
+    if (!response.ok) throw new Error('Erro ao editar categoria');
+    const atualizada = await response.json();
+    setCategorias(
+      categorias.map((cat) => (cat.id === id ? atualizada : cat))
+    );
+  };
 
-  const excluirCategoria = useCallback(async (id: string) => {
+  const deletarCategoria = async (id: string) => {
     const response = await apiClient.delete(`/api/categorias-insumos/${id}`);
     if (!response.ok) throw new Error('Erro ao excluir categoria');
-    await fetchCategorias();
-  }, [fetchCategorias]);
+    setCategorias(categorias.filter((cat) => cat.id !== id));
+  };
 
   useEffect(() => {
     fetchCategorias();
-  }, [fetchCategorias]);
+  }, []);
 
   return {
     categorias,
     loading,
-    error,
-    adicionarCategoria,
-    atualizarCategoria,
-    excluirCategoria
+    erro,
+    fetchCategorias,
+    criarCategoria,
+    editarCategoria,
+    deletarCategoria,
   };
 }
