@@ -1,44 +1,30 @@
-import { useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
+'use client';
 
-const supabase = createClient(
-  'https://sutmfzcmrlqnocsusiav.supabase.co',
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-);
- 
-const DiagnosticoPermissoes = () => {
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase-browser';
+
+export default function TesteDiagnosticoPermissoes() {
+  const [status, setStatus] = useState<string>('Carregando...');
+  const [perfil, setPerfil] = useState<any>(null);
+
   useEffect(() => {
     const testarPermissoes = async () => {
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-
       if (sessionError || !sessionData.session) {
-        console.error('❌ Sessão inválida ou não encontrada:', sessionError);
+        setStatus('❌ Sessão não encontrada ou usuário não autenticado');
         return;
       }
 
-      console.log('✅ Sessão ativa:', sessionData.session.user);
-
-      const { data: perfil, error: erroPerfil } = await supabase
+      const { data, error } = await supabase
         .from('perfis_usuarios')
         .select('*')
-        .eq('user_id', sessionData.session.user.id)
-        .single();
+        .limit(1);
 
-      if (erroPerfil) {
-        console.error('❌ Falha ao acessar perfil individual:', erroPerfil);
+      if (error) {
+        setStatus(`❌ Erro ao buscar perfil: ${error.message}`);
       } else {
-        console.log('✅ Perfil acessado com sucesso:', perfil);
-      }
-
-      const { data: todosPerfis, error: erroTodos } = await supabase
-        .from('perfis_usuarios')
-        .select('*')
-        .order('nome');
-
-      if (erroTodos) {
-        console.error('❌ Falha ao acessar todos os perfis:', erroTodos);
-      } else {
-        console.log('✅ Lista de perfis acessada com sucesso:', todosPerfis);
+        setPerfil(data[0]);
+        setStatus('✅ Permissões OK! Perfil carregado com sucesso.');
       }
     };
 
@@ -47,10 +33,13 @@ const DiagnosticoPermissoes = () => {
 
   return (
     <div className="p-6">
-      <h1 className="text-xl font-bold mb-4">Diagnóstico de Permissões</h1>
-      <p>Verifique o console do navegador para os resultados dos testes.</p>
+      <h1 className="text-2xl font-bold mb-4">Diagnóstico de Permissões</h1>
+      <p className="mb-4">{status}</p>
+      {perfil && (
+        <pre className="bg-gray-100 p-4 rounded">
+          {JSON.stringify(perfil, null, 2)}
+        </pre>
+      )}
     </div>
   );
-};
-
-export default DiagnosticoPermissoes;
+}
