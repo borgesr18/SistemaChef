@@ -174,3 +174,14 @@ model CategoriaReceita {
 
   @@map("categorias_receitas")
 }
+model CategoriaInsumo {
+  id        String   @id @default(cuid())
+  nome      String
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      Usuario  @relation(fields: [userId], references: [id])
+
+  @@unique([nome, userId]) // impede duplicação por usuário
+  @@map("categorias_insumos")
+}
