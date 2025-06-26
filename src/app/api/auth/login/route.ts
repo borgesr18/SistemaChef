@@ -1,39 +1,41 @@
+// 📁 src/app/api/auth/login/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { findByEmail, verificarSenha, ensureAdmin } from '@/lib/serverUsuarios';
-import { signToken } from '@/lib/auth';
+import { supabase } from '@/lib/supabase-browser';
+import { createServerClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
+import { type Database } from '@/lib/database.types';
 
 export async function POST(req: NextRequest) {
+  const { email, senha } = await req.json();
+
   try {
-    if (process.env.NEXT_PHASE === 'phase-production-build') {
-      return NextResponse.json({ error: 'Database not available during build' }, { status: 503 });
-    }
-
-    await ensureAdmin();
-
-    const { email, senha } = await req.json();
-
-    const user = await findByEmail(email);
-    if (!user || !verificarSenha(senha, user.senhaHash)) {
-      return NextResponse.json({ error: 'Credenciais inválidas' }, { status: 401 });
-    }
-
-    const token = signToken({
-      userId: user.id,
-      email: user.email,
-      role: user.role
+    const cookieStore = cookies();
+    const supabaseServer = createServerClient<Database>({
+      cookies: () => cookieStore,
     });
+
+    const { error, data } = await supabaseServer.auth.signInWithPassword({
+      email,
+      password: senha,
+    });
+
+    if (error) {
+      console.error('Erro no login:', error.message);
+      return NextResponse.json({ erro: 'Usuário ou senha inválidos' }, { status: 401 });
+    }
+
+    const { user, session } = data;
 
     return NextResponse.json({
-      user: {
-        id: user.id,
-        nome: user.nome,
-        email: user.email,
-        role: user.role
+      usuario: {
+        id: user?.id,
+        email: user?.email,
+        nome: user?.user_metadata?.nome || '',
       },
-      token
+      token: session?.access_token,
     });
-  } catch (error) {
-    console.error('Login error:', error);
-    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
+  } catch (err) {
+    console.error('Erro interno ao fazer login:', err);
+    return NextResponse.json({ erro: 'Erro interno do servidor' }, { status: 500 });
   }
 }
