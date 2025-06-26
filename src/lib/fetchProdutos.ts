@@ -1,25 +1,21 @@
 // lib/fetchProdutos.ts
+// ✅ Exemplo de fetchProdutos.ts corrigido
+'use client';
+
 import { supabaseBrowser } from '@/lib/supabase-browser';
 
 export async function fetchProdutos() {
   const supabase = supabaseBrowser();
-  const { data: sessionData, error } = await supabase.auth.getSession();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
 
-  const token = sessionData?.session?.access_token;
-
-  if (!token) {
-    throw new Error('Usuário não autenticado');
-  }
-
-  const response = await fetch('/api/produtos', {
+  const res = await fetch('/api/produtos', {
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${session?.access_token}`,
     },
   });
 
-  if (!response.ok) {
-    throw new Error('Erro ao buscar produtos');
-  }
-
-  return await response.json();
+  if (!res.ok) throw new Error('Erro ao buscar produtos');
+  return await res.json();
 }
