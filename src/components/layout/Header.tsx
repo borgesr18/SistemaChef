@@ -8,7 +8,7 @@ import Logo from '../ui/Logo';
 const Header: React.FC = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const closeTimeout = useRef<NodeJS.Timeout | null>(null);
-  const { usuarioAtual, logout } = useUsuarios();
+  const { usuarioAtual, logout, isLoading } = useUsuarios();
 
   const toggleProfile = () => {
     setIsProfileOpen(!isProfileOpen);
@@ -24,6 +24,8 @@ const Header: React.FC = () => {
   };
 
   const closeProfile = () => setIsProfileOpen(false);
+
+  if (isLoading) return null; // ou um Spinner, se preferir
 
   return (
     <header
@@ -63,9 +65,7 @@ const Header: React.FC = () => {
             </button>
 
             {isProfileOpen && (
-              <div
-                className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10"
-              >
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
                 <Link
                   href="/configuracoes/perfil"
                   className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -98,3 +98,4 @@ const Header: React.FC = () => {
 };
 
 export default Header;
+
