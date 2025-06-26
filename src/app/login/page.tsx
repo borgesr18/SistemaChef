@@ -1,71 +1,58 @@
+// 📁 src/app/login/page.tsx
 'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabaseBrowser } from '@/lib/supabase-browser';
-
-const supabase = supabaseBrowser();
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { login } from '@/lib/auth';
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState('');
-  const [loading, setLoading] = useState(false);
-  const router = useRouter();
+  const [carregando, setCarregando] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleLogin = async () => {
     setErro('');
-    setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password: senha,
-    });
+    setCarregando(true);
+    const resultado = await login(email, senha);
 
-    if (error) {
-      setErro('Email ou senha inválidos');
-    } else {
+    if (resultado.sucesso) {
       router.push('/');
+    } else {
+      setErro(resultado.mensagem);
     }
-    setLoading(false);
+
+    setCarregando(false);
   };
 
   return (
-    <div className="flex items-center justify-center h-screen bg-gray-50">
-      <form
-        onSubmit={handleLogin}
-        className="bg-white p-8 rounded-lg shadow-md w-full max-w-md"
-      >
-        <h1 className="text-2xl font-bold mb-6 text-center">Entrar no Sistema</h1>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-md p-8 space-y-6">
+        <h1 className="text-2xl font-bold text-center">Entrar no Sistema</h1>
 
-        <label className="block mb-2 font-medium">Email</label>
-        <input
+        <Input
           type="email"
+          placeholder="Email"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full p-3 border rounded mb-4"
-          required
+          onChange={e => setEmail(e.target.value)}
         />
-
-        <label className="block mb-2 font-medium">Senha</label>
-        <input
+        <Input
           type="password"
+          placeholder="Senha"
           value={senha}
-          onChange={(e) => setSenha(e.target.value)}
-          className="w-full p-3 border rounded mb-4"
-          required
+          onChange={e => setSenha(e.target.value)}
         />
 
-        <button
-          type="submit"
-          className="w-full bg-blue-600 text-white py-3 rounded hover:bg-blue-700 transition"
-          disabled={loading}
-        >
-          {loading ? 'Entrando...' : 'Entrar'}
-        </button>
+        {erro && <p className="text-red-600 text-sm">{erro}</p>}
 
-        {erro && <p className="text-red-600 text-sm mt-4">{erro}</p>}
-      </form>
+        <Button onClick={handleLogin} disabled={carregando} className="w-full">
+          {carregando ? 'Entrando...' : 'Entrar'}
+        </Button>
+      </div>
     </div>
   );
 }
+
