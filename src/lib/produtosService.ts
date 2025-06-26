@@ -1,7 +1,7 @@
 // 📁 src/lib/produtosService.ts
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { getAuthHeaders } from './apiClient';
 
 export interface ProdutoInfo {
@@ -159,4 +159,13 @@ export const useProdutos = () => {
     removerProduto,
     obterProdutoPorId,
   };
+};
+
+export const obterLabelCategoria = (categoriaId: string, produtos: ProdutoInfo[]) => {
+  const produto = produtos.find(p => p.categoriaId === categoriaId);
+  return produto?.categoriaNome || 'Sem categoria';
+};
+
+export const obterLabelCategoriaFromRef = (ref: any) => {
+  return ref?.nome || 'Sem categoria';
 };
