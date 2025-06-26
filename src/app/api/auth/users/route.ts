@@ -8,16 +8,16 @@ export async function GET() {
     await requireRole('admin');
 
     const supabaseClient = supabase();
-    const { data, error } = await supabaseClient
-      .from('perfis_usuarios')
+    const { data: usuarios, error } = await supabaseClient
+      .from('usuarios')
       .select('id, nome, email, perfil');
 
     if (error) {
       return NextResponse.json({ error: 'Erro ao buscar usuários' }, { status: 500 });
     }
 
-    return NextResponse.json(data);
-  } catch (error) {
+    return NextResponse.json(usuarios);
+  } catch (error: any) {
     if (error instanceof Error) {
       if (error.message === 'Authentication required') {
         return NextResponse.json({ error: 'Token de autenticação necessário' }, { status: 401 });
@@ -27,30 +27,9 @@ export async function GET() {
       }
     }
 
+    console.error('Erro interno do servidor:', error);
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
   }
 }
 
-    }
-
-    const { data: usuarios, error: usuariosError } = await supabase
-      .from('usuarios')
-      .select('*');
-
-    if (usuariosError) {
-      return NextResponse.json(
-        { error: 'Erro ao buscar usuários' },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json(usuarios);
-  } catch (error: any) {
-    console.error('Erro interno do servidor:', error);
-    return NextResponse.json(
-      { error: 'Erro interno do servidor' },
-      { status: 500 }
-    );
-  }
-}
 
