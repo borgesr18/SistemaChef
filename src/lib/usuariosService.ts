@@ -1,68 +1,58 @@
 // 📁 src/lib/usuariosService.ts
-import { supabase } from '@/lib/supabase-browser';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { Database } from '@/lib/database.types';
 
-export interface Usuario {
-  id: string;
-  nome: string;
-  email: string;
-  role: string;
-}
+const supabase = createClientComponentClient<Database>();
 
-export const fetchUsuarios = async (): Promise<Usuario[]> => {
+export const listarUsuarios = async () => {
   const { data, error } = await supabase
-    .from('usuarios')
-    .select('id, nome, email, role');
+    .from('perfis_usuarios')
+    .select('id, nome, email, papel');
 
   if (error) {
-    console.error('Erro ao buscar usuários:', error.message);
+    console.error('Erro ao listar usuários:', error.message);
     return [];
   }
 
-  return data || [];
-};
-
-export const adicionarUsuario = async (usuario: Omit<Usuario, 'id'>) => {
-  const { data, error } = await supabase
-    .from('usuarios')
-    .insert(usuario)
-    .select()
-    .single();
-
-  if (error) {
-    console.error('Erro ao adicionar usuário:', error.message);
-    return null;
-  }
-
   return data;
 };
 
-export const atualizarUsuario = async (id: string, updates: Partial<Usuario>) => {
+export const buscarUsuarioPorId = async (id: string) => {
   const { data, error } = await supabase
-    .from('usuarios')
-    .update(updates)
+    .from('perfis_usuarios')
+    .select('id, nome, email, papel')
     .eq('id', id)
-    .select()
     .single();
 
   if (error) {
-    console.error('Erro ao atualizar usuário:', error.message);
+    console.error('Erro ao buscar usuário por ID:', error.message);
     return null;
   }
 
   return data;
 };
 
-export const excluirUsuario = async (id: string) => {
-  const { error } = await supabase
-    .from('usuarios')
-    .delete()
-    .eq('id', id);
+export const criarUsuario = async (usuario: {
+  nome: string;
+  email: string;
+  senha: string;
+  papel: string;
+}) => {
+  const { data, error } = await supabase.auth.signUp({
+    email: usuario.email,
+    password: usuario.senha,
+    options: {
+      data: {
+        nome: usuario.nome,
+        papel: usuario.papel,
+      },
+    },
+  });
 
   if (error) {
-    console.error('Erro ao excluir usuário:', error.message);
-    return false;
+    console.error('Erro ao criar usuário:', error.message);
+    return null;
   }
 
-  return true;
+  return data;
 };
-
