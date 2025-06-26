@@ -1,32 +1,13 @@
-// src/app/api/configuracoes/unidades/[id]/route.ts
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { requireAuth } from '@/lib/requireAuth';
+// 📁 src/app/api/configuracoes/unidades/[id]/route.ts
+// ❌ Remover qualquer linha como:
+// import { useEffect } from 'react';
+// useEffect(() => {...}, []);
+// ✅ Apenas lógica de handler API aqui
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
-  try {
-    await requireAuth(req);
-    await prisma.unidade.delete({ where: { id: params.id } });
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Erro ao excluir unidade:', error);
-    return NextResponse.json({ error: 'Erro interno' }, { status: 500 });
-  }
+export async function PUT(req: Request, { params }: { params: { id: string } }) {
+  const body = await req.json();
+  const { data, error } = await supabase.from('unidades').update(body).eq('id', params.id);
+  if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+  return new Response(JSON.stringify(data), { status: 200 });
 }
 
-// Correção sugerida para useEffect no ConfiguracoesLayout.tsx
-useEffect(() => {
-  async function carregarCategorias() {
-    try {
-      const res = await apiClient.get("/api/configuracoes/categorias-insumos");
-      const json = await res.json();
-      if (!Array.isArray(json)) throw new Error('Resposta inválida da API');
-      setCategorias(json);
-    } catch (err: any) {
-      setErro("Erro ao carregar categorias");
-    } finally {
-      setCarregando(false);
-    }
-  }
-  carregarCategorias();
-}, []);
