@@ -5,7 +5,7 @@ const supabase = createClient(
   'https://sutmfzcmrlqnocsusiav.supabase.co',
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 );
-
+ 
 const DiagnosticoPermissoes = () => {
   useEffect(() => {
     const testarPermissoes = async () => {
