@@ -1,34 +1,31 @@
 // 📁 src/app/api/auth/users/route.ts
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { requireAuth } from '@/lib/auth';
+import { NextResponse } from 'next/server';
+import { getServerSupabaseClient, requireRole } from '@/lib/auth';
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
-    const user = await requireAuth(req);
+    // Garante que apenas administradores vejam os usuários
+    await requireRole('admin');
 
-    if (!user) {
-      return NextResponse.json({ error: 'Usuário não autenticado' }, { status: 401 });
+    const supabase = getServerSupabaseClient();
+
+    const { data: perfis, error } = await supabase
+      .from('perfis_usuarios')
+      .select(`
+        id_usuario,
+        nome,
+        email,
+        papel
+      `);
+
+    if (error) {
+      console.error('Erro ao buscar perfis:', error.message);
+      return NextResponse.json({ error: 'Erro ao buscar perfis de usuários' }, { status: 500 });
     }
 
-    const usuarios = await prisma.usuario.findMany({
-      orderBy: { nome: 'asc' },
-      select: {
-        id: true,
-        nome: true,
-        email: true,
-        role: true,
-        ativo: true,
-      },
-    });
-
-    return NextResponse.json(usuarios);
+    return NextResponse.json(perfis);
   } catch (error) {
-    console.error('Erro ao buscar usuários:', error);
-    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
-  }
-}
-
+    console.error('Erro na rota GET /api/auth/users:', error);
     if (error instanceof Error) {
       if (error.message === 'Authentication required') {
         return NextResponse.json({ error: 'Token de autenticação necessário' }, { status: 401 });
@@ -37,7 +34,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: 'Permissões insuficientes' }, { status: 403 });
       }
     }
+
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
   }
 }
-
