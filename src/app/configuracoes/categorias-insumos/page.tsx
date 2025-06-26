@@ -1,12 +1,12 @@
 // src/app/configuracoes/categorias-insumos/page.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   listarCategoriasInsumos,
-  adicionarCategoria,
-  atualizarCategoria,
-  excluirCategoria
+  criarCategoriaInsumo,
+  atualizarCategoriaInsumo,
+  excluirCategoriaInsumo,
 } from '@/lib/categoriasInsumosService';
 
 export default function CategoriasInsumosPage() {
@@ -14,90 +14,94 @@ export default function CategoriasInsumosPage() {
   const [nome, setNome] = useState('');
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
+  const [carregando, setCarregando] = useState(false);
 
-  async function carregar() {
-    try {
-      const dados = await listarCategoriasInsumos();
-      setCategorias(dados);
-    } catch (e: any) {
-      setErro(e.message);
-    }
-  }
+  const carregarCategorias = async () => {
+    setCarregando(true);
+    const lista = await listarCategoriasInsumos();
+    setCategorias(lista);
+    setCarregando(false);
+  };
 
   useEffect(() => {
-    carregar();
+    carregarCategorias();
   }, []);
 
-  async function salvar() {
+  const handleSalvar = async () => {
     try {
+      if (!nome.trim()) return;
       if (editandoId) {
-        await atualizarCategoria(editandoId, nome);
+        await atualizarCategoriaInsumo(editandoId, nome);
       } else {
-        await adicionarCategoria(nome);
+        await criarCategoriaInsumo(nome);
       }
       setNome('');
       setEditandoId(null);
-      await carregar();
-    } catch (e: any) {
-      setErro(e.message);
+      carregarCategorias();
+    } catch (err: any) {
+      setErro(err.message);
     }
-  }
+  };
 
-  async function remover(id: string) {
-    try {
-      await excluirCategoria(id);
-      await carregar();
-    } catch (e: any) {
-      setErro(e.message);
+  const handleEditar = (id: string, nomeAtual: string) => {
+    setEditandoId(id);
+    setNome(nomeAtual);
+  };
+
+  const handleExcluir = async (id: string) => {
+    if (confirm('Tem certeza que deseja excluir esta categoria?')) {
+      await excluirCategoriaInsumo(id);
+      carregarCategorias();
     }
-  }
+  };
 
   return (
-    <div className="p-6">
-      <h1 className="text-xl font-bold mb-4">Categorias de Insumos</h1>
+    <div className="p-6 max-w-2xl mx-auto">
+      <h1 className="text-2xl font-bold mb-4">Categorias de Insumos</h1>
 
-      {erro && <p className="text-red-600">Erro: {erro}</p>}
+      {erro && <p className="text-red-600 mb-4">Erro: {erro}</p>}
 
-      <div className="mb-4">
+      <div className="flex gap-2 mb-4">
         <input
           type="text"
           placeholder="Nome da categoria"
           value={nome}
           onChange={(e) => setNome(e.target.value)}
-          className="border p-2 rounded mr-2"
+          className="border border-gray-300 px-3 py-2 rounded w-full"
         />
         <button
-          onClick={salvar}
+          onClick={handleSalvar}
           className="bg-blue-600 text-white px-4 py-2 rounded"
         >
           {editandoId ? 'Atualizar' : 'Adicionar'}
         </button>
       </div>
 
-      <ul className="space-y-2">
-        {categorias.map((cat) => (
-          <li key={cat.id} className="flex justify-between items-center bg-white shadow p-3 rounded">
-            <span>{cat.nome}</span>
-            <div>
-              <button
-                onClick={() => {
-                  setNome(cat.nome);
-                  setEditandoId(cat.id);
-                }}
-                className="text-sm text-blue-600 mr-3"
-              >
-                Editar
-              </button>
-              <button
-                onClick={() => remover(cat.id)}
-                className="text-sm text-red-600"
-              >
-                Excluir
-              </button>
-            </div>
-          </li>
-        ))}
-      </ul>
+      {carregando ? (
+        <p className="text-gray-500">Carregando categorias...</p>
+      ) : (
+        <ul className="divide-y divide-gray-200">
+          {categorias.map((cat) => (
+            <li key={cat.id} className="py-2 flex justify-between items-center">
+              <span>{cat.nome}</span>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleEditar(cat.id, cat.nome)}
+                  className="text-blue-600 hover:underline"
+                >
+                  Editar
+                </button>
+                <button
+                  onClick={() => handleExcluir(cat.id)}
+                  className="text-red-600 hover:underline"
+                >
+                  Excluir
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
