@@ -1,31 +1,36 @@
 // src/app/api/auth/users/route.ts
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { supabase, requireRole } from '@/lib/authServer';
 
 export async function GET() {
   try {
-    const supabase = createServerComponentClient({ cookies });
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    // Verifica se o usuário tem permissão de administrador
+    await requireRole('admin');
 
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Token de autenticação necessário' },
-        { status: 401 }
-      );
+    const supabaseClient = supabase();
+    const { data, error } = await supabaseClient
+      .from('perfis_usuarios')
+      .select('id, nome, email, perfil');
+
+    if (error) {
+      return NextResponse.json({ error: 'Erro ao buscar usuários' }, { status: 500 });
     }
 
-    const { data: perfil, error: perfilError } = await supabase
-      .from('perfis_usuarios')
-      .select('papel')
-      .eq('id_usuario', user.id)
-      .single();
+    return NextResponse.json(data);
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.message === 'Authentication required') {
+        return NextResponse.json({ error: 'Token de autenticação necessário' }, { status: 401 });
+      }
+      if (error.message === 'Insufficient permissions') {
+        return NextResponse.json({ error: 'Permissões insuficientes' }, { status: 403 });
+      }
+    }
 
-    if (perfilError || !perfil || perfil.papel !== 'admin') {
-      return NextResponse.json(
-        { error: 'Permissões insuficientes' },
-        { status: 403 }
-      );
+    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
+  }
+}
+
     }
 
     const { data: usuarios, error: usuariosError } = await supabase
