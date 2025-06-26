@@ -1,5 +1,4 @@
-src/app/api/configuracoes/categorias-receitas/route.ts
-
+//src/app/api/configuracoes/categorias-receitas/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
@@ -15,7 +14,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(categorias);
   } catch (error) {
     console.error('Erro ao buscar categorias de receitas:', error);
-    return NextResponse.json({ error: 'Erro ao buscar categorias' }, { status: 500 });
+    return NextResponse.json({ error: 'Erro ao buscar categorias de receitas' }, { status: 500 });
   }
 }
 
@@ -26,17 +25,17 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { nome } = body;
 
-    if (!nome) {
+    if (!nome || nome.trim() === '') {
       return NextResponse.json({ error: 'Nome é obrigatório' }, { status: 400 });
     }
 
     const novaCategoria = await prisma.categoriaReceita.create({
-      data: { nome },
+      data: { nome: nome.trim() },
     });
 
     return NextResponse.json(novaCategoria);
   } catch (error) {
     console.error('Erro ao criar categoria de receita:', error);
-    return NextResponse.json({ error: 'Erro interno ao criar categoria' }, { status: 500 });
+    return NextResponse.json({ error: 'Erro ao criar categoria' }, { status: 500 });
   }
 }
