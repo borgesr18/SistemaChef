@@ -1,38 +1,80 @@
-import { NextResponse } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
-import { Database } from '@/types/supabase';
-import { cookies } from 'next/headers';
+// src/app/api/categorias-insumos/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { requireAuth } from '@/lib/auth';
 
-export async function GET() {
-  const supabase = createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: () => cookies() }
-  );
+export async function GET(req: NextRequest) {
+  try {
+    const user = await requireAuth(req);
 
-  const { data, error } = await supabase
-    .from('categorias_insumos')
-    .select('*')
-    .order('nome', { ascending: true });
+    const categorias = await prisma.categoriaInsumo.findMany({
+      where: { userId: user.id },
+      orderBy: { nome: 'asc' }
+    });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
+    return NextResponse.json(categorias);
+  } catch (error) {
+    console.error('Erro ao buscar categorias de insumos:', error);
+    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
+  }
 }
 
-export async function POST(req: Request) {
-  const body = await req.json();
-  const { nome } = body;
+export async function POST(req: NextRequest) {
+  try {
+    const user = await requireAuth(req);
+    const body = await req.json();
 
-  const supabase = createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: () => cookies() }
-  );
+    const novaCategoria = await prisma.categoriaInsumo.create({
+      data: {
+        nome: body.nome,
+        userId: user.id
+      }
+    });
 
-  const { error } = await supabase
-    .from('categorias_insumos')
-    .insert({ nome });
+    return NextResponse.json(novaCategoria);
+  } catch (error) {
+    console.error('Erro ao criar categoria de insumo:', error);
+    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
+  }
+}
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ sucesso: true });
+export async function PUT(req: NextRequest) {
+  try {
+    const user = await requireAuth(req);
+    const body = await req.json();
+
+    const categoriaAtualizada = await prisma.categoriaInsumo.update({
+      where: {
+        id: body.id,
+        userId: user.id
+      },
+      data: {
+        nome: body.nome
+      }
+    });
+
+    return NextResponse.json(categoriaAtualizada);
+  } catch (error) {
+    console.error('Erro ao atualizar categoria de insumo:', error);
+    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const user = await requireAuth(req);
+    const { id } = await req.json();
+
+    await prisma.categoriaInsumo.delete({
+      where: {
+        id,
+        userId: user.id
+      }
+    });
+
+    return NextResponse.json({ message: 'Categoria excluída com sucesso' });
+  } catch (error) {
+    console.error('Erro ao excluir categoria de insumo:', error);
+    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
+  }
 }
