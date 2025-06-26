@@ -1,3 +1,4 @@
+// ✅ src/components/configuracoes/ConfiguracoesLayout.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -21,7 +22,7 @@ export default function ConfiguracoesLayout() {
       try {
         const res = await apiClient.get("/api/configuracoes/categorias-insumos");
         const json = await res.json();
-        setCategorias(json);
+        setCategorias(Array.isArray(json) ? json : []);
       } catch (err: any) {
         setErro("Erro ao carregar categorias");
       } finally {
@@ -80,7 +81,7 @@ export default function ConfiguracoesLayout() {
         <p className="text-red-600">{erro}</p>
       ) : (
         <ul className="divide-y">
-          {categorias.map((cat) => (
+          {Array.isArray(categorias) && categorias.map((cat) => (
             <li
               key={cat.id}
               className="py-2 flex justify-between items-center"
