@@ -19,6 +19,7 @@ model Usuario {
   estoqueMovimentacoes EstoqueMovimentacao[]
   fichasTecnicas       FichaTecnica[]
   producoes            Producao[]
+  categoriasInsumos    CategoriaInsumo[]    
 
   @@map("usuarios")
 }
