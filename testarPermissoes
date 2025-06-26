@@ -1,0 +1,46 @@
+// 1. Configure sua URL e chave pública do Supabase
+const SUPABASE_URL = 'https://sutmfzcmrlqnocsusiav.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN1dG1memNtcmxxbm9jc3VzaWF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1MzgwODMsImV4cCI6MjA2NjExNDA4M30.BQRo64qRNzqB_XGNeSe4jkZ8Mzzji8eUYVbS_nWw8tI'; // Troque pela sua `anon` key
+
+// 2. Inicia Supabase client
+import { createClient } from '@supabase/supabase-js';
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// 3. Testa a sessão atual
+async function testarPermissoes() {
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+
+  if (sessionError || !sessionData.session) {
+    console.error('❌ Sessão inválida ou não encontrada:', sessionError);
+    return;
+  }
+
+  console.log('✅ Sessão ativa:', sessionData.session.user);
+
+  // 4. Tenta acessar perfil individual
+  const { data: perfil, error: erroPerfil } = await supabase
+    .from('perfis_usuarios')
+    .select('*')
+    .eq('user_id', sessionData.session.user.id)
+    .single();
+
+  if (erroPerfil) {
+    console.error('❌ Falha ao acessar perfil individual:', erroPerfil);
+  } else {
+    console.log('✅ Perfil acessado com sucesso:', perfil);
+  }
+
+  // 5. Tenta acessar todos os perfis (requere role: admin)
+  const { data: todosPerfis, error: erroTodos } = await supabase
+    .from('perfis_usuarios')
+    .select('*')
+    .order('nome');
+
+  if (erroTodos) {
+    console.error('❌ Falha ao acessar todos os perfis:', erroTodos);
+  } else {
+    console.log('✅ Lista de perfis acessada com sucesso:', todosPerfis);
+  }
+}
+
+testarPermissoes();
