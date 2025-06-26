@@ -1,26 +1,87 @@
 // src/lib/categoriasInsumosService.ts
-import { supabase } from '@/lib/supabase-browser';
+import { getAuthHeaders } from './apiClient';
 
-export async function fetchCategorias() {
-  const { data, error } = await supabase.from('categorias_insumos').select('*');
-  if (error) throw new Error(error.message);
-  return data;
+export interface CategoriaInsumo {
+  id: string;
+  nome: string;
 }
 
-export async function adicionarCategoria(nome: string) {
-  const { data, error } = await supabase.from('categorias_insumos').insert([{ nome }]).select();
-  if (error) throw new Error(error.message);
-  return data;
-}
+export const fetchCategorias = async (): Promise<CategoriaInsumo[]> => {
+  try {
+    const response = await fetch('/api/configuracoes/categorias-insumos', {
+      headers: getAuthHeaders(),
+    });
 
-export async function atualizarCategoria(id: string, nome: string) {
-  const { data, error } = await supabase.from('categorias_insumos').update({ nome }).eq('id', id).select();
-  if (error) throw new Error(error.message);
-  return data;
-}
+    if (!response.ok) {
+      throw new Error('Erro ao buscar categorias de insumos');
+    }
 
-export async function excluirCategoria(id: string) {
-  const { error } = await supabase.from('categorias_insumos').delete().eq('id', id);
-  if (error) throw new Error(error.message);
-}
+    return await response.json();
+  } catch (error) {
+    console.error('Erro ao buscar categorias de insumos:', error);
+    return [];
+  }
+};
+
+export const adicionarCategoria = async (nome: string): Promise<CategoriaInsumo | null> => {
+  try {
+    const response = await fetch('/api/configuracoes/categorias-insumos', {
+      method: 'POST',
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ nome }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Erro ao adicionar categoria de insumo');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Erro ao adicionar categoria de insumo:', error);
+    return null;
+  }
+};
+
+export const atualizarCategoria = async (id: string, nome: string): Promise<CategoriaInsumo | null> => {
+  try {
+    const response = await fetch(`/api/configuracoes/categorias-insumos/${id}`, {
+      method: 'PUT',
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ nome }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Erro ao atualizar categoria de insumo');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Erro ao atualizar categoria de insumo:', error);
+    return null;
+  }
+};
+
+export const excluirCategoria = async (id: string): Promise<boolean> => {
+  try {
+    const response = await fetch(`/api/configuracoes/categorias-insumos/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error('Erro ao excluir categoria de insumo');
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Erro ao excluir categoria de insumo:', error);
+    return false;
+  }
+};
 
