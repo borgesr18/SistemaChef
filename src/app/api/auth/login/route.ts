@@ -1,41 +1,46 @@
 // 📁 src/app/api/auth/login/route.ts
-import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase-browser';
-import { createServerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
-import { type Database } from '@/lib/database.types';
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase-server';
+import { signToken } from '@/lib/auth';
 
 export async function POST(req: NextRequest) {
   const { email, senha } = await req.json();
+  const supabase = createClient();
 
-  try {
-    const cookieStore = cookies();
-    const supabaseServer = createServerClient<Database>({
-      cookies: () => cookieStore,
-    });
+  const { data: user, error } = await supabase
+    .from('usuarios')
+    .select('id, nome, email, senha, role')
+    .eq('email', email)
+    .single();
 
-    const { error, data } = await supabaseServer.auth.signInWithPassword({
-      email,
-      password: senha,
-    });
-
-    if (error) {
-      console.error('Erro no login:', error.message);
-      return NextResponse.json({ erro: 'Usuário ou senha inválidos' }, { status: 401 });
-    }
-
-    const { user, session } = data;
-
-    return NextResponse.json({
-      usuario: {
-        id: user?.id,
-        email: user?.email,
-        nome: user?.user_metadata?.nome || '',
-      },
-      token: session?.access_token,
-    });
-  } catch (err) {
-    console.error('Erro interno ao fazer login:', err);
-    return NextResponse.json({ erro: 'Erro interno do servidor' }, { status: 500 });
+  if (error || !user) {
+    return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 401 });
   }
+
+  if (user.senha !== senha) {
+    return NextResponse.json({ error: 'Senha incorreta' }, { status: 401 });
+  }
+
+  const token = signToken({
+    id: user.id,
+    nome: user.nome,
+    email: user.email,
+    role: user.role,
+  });
+
+  cookies().set('token', token, {
+    httpOnly: true,
+    path: '/',
+    secure: true,
+    sameSite: 'strict',
+    maxAge: 60 * 60 * 4, // 4 horas
+  });
+
+  return NextResponse.json({
+    id: user.id,
+    nome: user.nome,
+    email: user.email,
+    role: user.role,
+  });
 }
