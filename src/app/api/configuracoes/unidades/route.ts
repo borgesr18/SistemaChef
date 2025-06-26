@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(unidades);
   } catch (error) {
-    console.error('Erro ao buscar unidades de medida:', error);
+    console.error('Erro ao buscar unidades:', error);
     return NextResponse.json({ error: 'Erro ao buscar unidades' }, { status: 500 });
   }
 }
@@ -22,21 +22,19 @@ export async function POST(req: NextRequest) {
   try {
     await requireAuth(req);
 
-    const data = await req.json();
+    const { nome, sigla } = await req.json();
 
-    if (!data.nome) {
-      return NextResponse.json({ error: 'Nome é obrigatório' }, { status: 400 });
+    if (!nome || !sigla) {
+      return NextResponse.json({ error: 'Nome e sigla são obrigatórios' }, { status: 400 });
     }
 
-    const novaUnidade = await prisma.unidade.create({
-      data: {
-        nome: data.nome,
-      },
+    const unidade = await prisma.unidade.create({
+      data: { nome, sigla },
     });
 
-    return NextResponse.json(novaUnidade);
+    return NextResponse.json(unidade);
   } catch (error) {
-    console.error('Erro ao criar unidade de medida:', error);
+    console.error('Erro ao criar unidade:', error);
     return NextResponse.json({ error: 'Erro ao criar unidade' }, { status: 500 });
   }
 }
