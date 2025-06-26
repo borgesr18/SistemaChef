@@ -1,48 +1,62 @@
 // src/lib/categoriasInsumosService.ts
 'use client';
 
-import { supabaseBrowser } from './supabase-browser';
+import { useCallback, useEffect, useState } from 'react';
+import { apiClient } from './apiClient';
 
-const supabase = supabaseBrowser();
+export type CategoriaInsumo = {
+  id: string;
+  nome: string;
+  created_at?: string;
+};
 
-export async function listarCategoriasInsumos() {
-  const { data, error } = await supabase
-    .from('categorias_insumos')
-    .select('*')
-    .order('nome', { ascending: true });
+export function useCategoriasInsumos() {
+  const [categorias, setCategorias] = useState<CategoriaInsumo[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-  if (error) throw new Error(error.message);
-  return data;
-}
+  const fetchCategorias = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await apiClient.get('/api/categorias-insumos');
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Erro ao buscar categorias');
+      setCategorias(data);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-export async function criarCategoriaInsumo(nome: string) {
-  const { data, error } = await supabase
-    .from('categorias_insumos')
-    .insert([{ nome }])
-    .select()
-    .single();
+  const adicionarCategoria = useCallback(async (nome: string) => {
+    const response = await apiClient.post('/api/categorias-insumos', { nome });
+    if (!response.ok) throw new Error('Erro ao adicionar categoria');
+    await fetchCategorias();
+  }, [fetchCategorias]);
 
-  if (error) throw new Error(error.message);
-  return data;
-}
+  const atualizarCategoria = useCallback(async (id: string, nome: string) => {
+    const response = await apiClient.put(`/api/categorias-insumos/${id}`, { nome });
+    if (!response.ok) throw new Error('Erro ao atualizar categoria');
+    await fetchCategorias();
+  }, [fetchCategorias]);
 
-export async function atualizarCategoriaInsumo(id: string, nome: string) {
-  const { data, error } = await supabase
-    .from('categorias_insumos')
-    .update({ nome })
-    .eq('id', id)
-    .select()
-    .single();
+  const excluirCategoria = useCallback(async (id: string) => {
+    const response = await apiClient.delete(`/api/categorias-insumos/${id}`);
+    if (!response.ok) throw new Error('Erro ao excluir categoria');
+    await fetchCategorias();
+  }, [fetchCategorias]);
 
-  if (error) throw new Error(error.message);
-  return data;
-}
+  useEffect(() => {
+    fetchCategorias();
+  }, [fetchCategorias]);
 
-export async function excluirCategoriaInsumo(id: string) {
-  const { error } = await supabase
-    .from('categorias_insumos')
-    .delete()
-    .eq('id', id);
-
-  if (error) throw new Error(error.message);
+  return {
+    categorias,
+    loading,
+    error,
+    adicionarCategoria,
+    atualizarCategoria,
+    excluirCategoria
+  };
 }
