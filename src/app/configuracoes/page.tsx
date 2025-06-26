@@ -1,31 +1,22 @@
-'use client';
+// /src/app/configuracoes/page.tsx
+import { supabaseServer } from '@/lib/supabase-server';
+import ConfiguracoesLayout from '@/components/configuracoes/ConfiguracoesLayout'; // supondo que este componente exista
 
-import { ReactNode } from 'react';
-import Tabs from '@/components/ui/Tabs';
+export default async function Page() {
+  const supabase = supabaseServer();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
 
-import UsuariosConfigPage from './usuarios/page';
-import CategoriasConfigPage from './categorias/page';
-import CategoriasReceitasConfigPage from './categorias-receitas/page';
-import UnidadesConfigPage from './unidades/page';
+  if (error) {
+    return (
+      <div className="p-6">
+        <h1 className="text-xl font-bold text-red-600">Erro ao carregar usuário</h1>
+        <p className="text-gray-700">{error.message}</p>
+      </div>
+    );
+  }
 
-type TabConfig = {
-  id: string;
-  label: string;
-  content: ReactNode;
-};
-
-export default function ConfiguracoesPage() {
-  const tabs: TabConfig[] = [
-    { id: 'usuarios', label: 'Usuários', content: <UsuariosConfigPage /> },
-    { id: 'categorias', label: 'Categorias de Produtos', content: <CategoriasConfigPage /> },
-    { id: 'categorias-receitas', label: 'Categorias de Receitas', content: <CategoriasReceitasConfigPage /> },
-    { id: 'unidades', label: 'Unidades de Medida', content: <UnidadesConfigPage /> },
-  ];
-
-  return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-gray-800">Configurações</h1>
-      <Tabs tabs={tabs} />
-    </div>
-  );
+  return <ConfiguracoesLayout user={user} />;
 }
