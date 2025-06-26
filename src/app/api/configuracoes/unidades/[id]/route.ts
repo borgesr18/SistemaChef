@@ -5,11 +5,16 @@ import { requireAuth } from '@/lib/auth';
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const user = await requireAuth(req);
-    const { id } = params;
+    await requireAuth(req);
 
-    if (!id) {
-      return NextResponse.json({ error: 'ID não fornecido' }, { status: 400 });
+    const id = params.id;
+
+    const unidadeExistente = await prisma.unidade.findUnique({
+      where: { id },
+    });
+
+    if (!unidadeExistente) {
+      return NextResponse.json({ error: 'Unidade não encontrada' }, { status: 404 });
     }
 
     await prisma.unidade.delete({
@@ -18,11 +23,9 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
 
     return NextResponse.json({ message: 'Unidade excluída com sucesso' });
   } catch (error) {
-    console.error('Erro ao excluir unidade:', error);
-    if (error instanceof Error && error.message === 'Authentication required') {
-      return NextResponse.json({ error: 'Autenticação necessária' }, { status: 401 });
-    }
-    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
+    console.error('Erro ao excluir unidade de medida:', error);
+    return NextResponse.json({ error: 'Erro ao excluir unidade' }, { status: 500 });
   }
 }
+
 
