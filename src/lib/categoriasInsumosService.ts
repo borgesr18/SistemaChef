@@ -1,6 +1,7 @@
+// src/lib/categoriasInsumosService.ts
 'use client';
 
-import { supabaseBrowser } from '@/lib/supabase-browser';
+import { supabaseBrowser } from './supabase-browser';
 
 const supabase = supabaseBrowser();
 
@@ -14,24 +15,30 @@ export async function listarCategoriasInsumos() {
   return data;
 }
 
-export async function adicionarCategoria(nome: string) {
-  const { error } = await supabase
+export async function criarCategoriaInsumo(nome: string) {
+  const { data, error } = await supabase
     .from('categorias_insumos')
-    .insert({ nome });
+    .insert([{ nome }])
+    .select()
+    .single();
 
   if (error) throw new Error(error.message);
+  return data;
 }
 
-export async function atualizarCategoria(id: string, nome: string) {
-  const { error } = await supabase
+export async function atualizarCategoriaInsumo(id: string, nome: string) {
+  const { data, error } = await supabase
     .from('categorias_insumos')
     .update({ nome })
-    .eq('id', id);
+    .eq('id', id)
+    .select()
+    .single();
 
   if (error) throw new Error(error.message);
+  return data;
 }
 
-export async function excluirCategoria(id: string) {
+export async function excluirCategoriaInsumo(id: string) {
   const { error } = await supabase
     .from('categorias_insumos')
     .delete()
