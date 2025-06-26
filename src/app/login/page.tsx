@@ -1,4 +1,4 @@
-// 📁 src/app/login/page.tsx
+// src/app/login/page.tsx
 'use client';
 
 import { useState } from 'react';
@@ -8,16 +8,14 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
 export default function LoginPage() {
-  const router = useRouter();
-  const supabase = createClientComponentClient();
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState('');
-  const [carregando, setCarregando] = useState(false);
+  const router = useRouter();
+  const supabase = createClientComponentClient();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setCarregando(true);
     setErro('');
 
     const { error } = await supabase.auth.signInWithPassword({
@@ -26,44 +24,55 @@ export default function LoginPage() {
     });
 
     if (error) {
-      setErro('E-mail ou senha inválidos.');
+      setErro('Email ou senha inválidos.');
     } else {
       router.push('/');
     }
-
-    setCarregando(false);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+    <div className="flex justify-center items-center min-h-screen bg-gray-50">
       <form
         onSubmit={handleLogin}
-        className="bg-white shadow-md rounded-xl p-8 w-full max-w-md space-y-4"
+        className="bg-white shadow-lg rounded-xl p-8 w-full max-w-md space-y-6"
       >
-        <h2 className="text-2xl font-bold text-center text-gray-800">Acesso ao Sistema</h2>
+        <h2 className="text-2xl font-bold text-center">Login</h2>
 
-        <Input
-          type="email"
-          placeholder="E-mail"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          required
-        />
+        {erro && (
+          <p className="text-red-500 text-center text-sm">{erro}</p>
+        )}
 
-        <Input
-          type="password"
-          placeholder="Senha"
-          value={senha}
-          onChange={e => setSenha(e.target.value)}
-          required
-        />
+        <div>
+          <label htmlFor="email" className="block text-sm font-medium mb-1">
+            E-mail
+          </label>
+          <Input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+        </div>
 
-        {erro && <p className="text-red-500 text-sm text-center">{erro}</p>}
+        <div>
+          <label htmlFor="senha" className="block text-sm font-medium mb-1">
+            Senha
+          </label>
+          <Input
+            id="senha"
+            type="password"
+            value={senha}
+            onChange={(e) => setSenha(e.target.value)}
+            required
+          />
+        </div>
 
-        <Button type="submit" disabled={carregando} className="w-full">
-          {carregando ? 'Entrando...' : 'Entrar'}
+        <Button type="submit" className="w-full">
+          Entrar
         </Button>
       </form>
     </div>
   );
 }
+
