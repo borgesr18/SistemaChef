@@ -1,16 +1,16 @@
 // /src/app/layout.tsx
 import './globals.css';
-import { supabaseServer } from '@/lib/supabase-server';
+import { ReactNode } from 'react';
+import { AuthProvider } from '@/contexts/AuthContext';
+import MainLayout from '@/components/layout/MainLayout';
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const supabase = supabaseServer();
-  const { data: { user } } = await supabase.auth.getUser();
-
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="pt-br">
       <body>
-        {/* Opcional: passar "user" por contexto */}
-        {children}
+        <AuthProvider>
+          <MainLayout>{children}</MainLayout>
+        </AuthProvider>
       </body>
     </html>
   );
