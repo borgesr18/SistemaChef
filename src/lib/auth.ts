@@ -1,7 +1,10 @@
 // src/lib/auth.ts
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createMiddlewareClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import type { NextRequest } from 'next/server';
+import { Database } from '@/types/supabase';
 
 /**
  * Verifica se o usuário autenticado possui o papel exigido.
@@ -26,4 +29,18 @@ export async function requireRole(role: string) {
   }
 
   return user;
+}
+
+export async function requireAuth(_req: NextRequest) {
+  const supabase = createMiddlewareClient<Database>({ cookies })
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser()
+
+  if (error || !user) {
+    throw new Error('Authentication required')
+  }
+
+  return user
 }
