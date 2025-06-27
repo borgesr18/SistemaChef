@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
-import { requireAuth } from '@/lib/auth';
+import { requireAuth } from '@/lib/requireAuth';
 
 export async function GET(req: NextRequest) {
   if (process.env.NEXT_PHASE === 'phase-production-build') {

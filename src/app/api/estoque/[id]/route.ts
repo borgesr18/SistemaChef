@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
-import { requireAuth } from '@/lib/auth';
+import { requireAuth } from '@/lib/requireAuth';
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   try {
