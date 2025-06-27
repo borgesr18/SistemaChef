@@ -1,15 +1,20 @@
 // /src/app/api/configuracoes/categorias-insumos/route.ts
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { createClient } from '@/lib/supabase-server';
 import { requireAuth } from '@/lib/auth';
 import { NextRequest } from 'next/server';
 
 export async function GET(req: NextRequest) {
   try {
-    const categorias = await prisma.categoriaInsumo.findMany({
-      where: { oculto: false },
-      orderBy: { nome: 'asc' },
-    });
+    const supabase = createClient();
+    const { data: categorias, error } = await supabase
+      .from('categorias_insumos')
+      .select('*')
+      .eq('oculto', false)
+      .order('nome', { ascending: true });
+
+    if (error) throw error;
+
     return NextResponse.json(categorias);
   } catch (error) {
     return NextResponse.json({ error: 'Erro ao buscar categorias.' }, { status: 500 });
@@ -18,15 +23,16 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const user = await requireAuth(req);
+    const user = await requireAuth();
     const { nome } = await req.json();
 
-    const novaCategoria = await prisma.categoriaInsumo.create({
-      data: {
-        nome,
-        userId: user.id,
-      },
-    });
+    const supabase = createClient();
+    const { data: novaCategoria, error } = await supabase
+      .from('categorias_insumos')
+      .insert({ nome, user_id: user.id })
+      .single();
+
+    if (error) throw error;
 
     return NextResponse.json(novaCategoria);
   } catch (error) {

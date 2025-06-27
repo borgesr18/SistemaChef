@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { createClient } from '@/lib/supabase-server';
 import { requireAuth } from '@/lib/auth';
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
@@ -8,14 +8,18 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       return NextResponse.json({ error: 'Database not available during build' }, { status: 503 });
     }
     
-    await requireAuth(req);
+    await requireAuth();
     
     const { nome } = await req.json();
     
-    const categoria = await prisma.categoria.update({
-      where: { id: params.id },
-      data: { nome }
-    });
+    const supabase = createClient();
+    const { data: categoria, error } = await supabase
+      .from('categorias')
+      .update({ nome })
+      .eq('id', params.id)
+      .single();
+
+    if (error) throw error;
 
     return NextResponse.json(categoria);
   } catch (error) {
@@ -33,11 +37,15 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
       return NextResponse.json({ error: 'Database not available during build' }, { status: 503 });
     }
     
-    await requireAuth(req);
+    await requireAuth();
     
-    await prisma.categoria.delete({
-      where: { id: params.id }
-    });
+    const supabase = createClient();
+    const { error } = await supabase
+      .from('categorias')
+      .delete()
+      .eq('id', params.id);
+
+    if (error) throw error;
 
     return NextResponse.json({ success: true });
   } catch (error) {

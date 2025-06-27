@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { createClient } from '@/lib/supabase-server';
 import { requireAuth } from '@/lib/auth';
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
@@ -8,34 +8,30 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       return NextResponse.json({ error: 'Database not available during build' }, { status: 503 });
     }
 
-    const user = await requireAuth(req);
+    const user = await requireAuth();
     
     const data = await req.json();
     
-    const preco = await prisma.precoVenda.update({
-      where: { 
-        id: params.id,
-        userId: user.id 
-      },
-      data: {
-        producaoId: data.producaoId,
-        fichaId: data.fichaId,
-        custoUnitario: data.custoUnitario,
+    const supabase = createClient();
+    const { data: preco, error } = await supabase
+      .from('precos_venda')
+      .update({
+        producao_id: data.producaoId,
+        ficha_id: data.fichaId,
+        custo_unitario: data.custoUnitario,
         lucro1: data.lucro1,
         preco1: data.preco1,
         lucro2: data.lucro2,
         preco2: data.preco2,
         lucro3: data.lucro3,
-        preco3: data.preco3
-      },
-      include: {
-        producao: {
-          include: {
-            ficha: true
-          }
-        }
-      }
-    });
+        preco3: data.preco3,
+      })
+      .eq('id', params.id)
+      .eq('user_id', user.id)
+      .select('*, producao:producoes(*, ficha:fichas_tecnicas(*))')
+      .single();
+
+    if (error) throw error;
 
     return NextResponse.json(preco);
   } catch (error) {
@@ -53,14 +49,16 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
       return NextResponse.json({ error: 'Database not available during build' }, { status: 503 });
     }
 
-    const user = await requireAuth(req);
+    const user = await requireAuth();
     
-    await prisma.precoVenda.delete({
-      where: { 
-        id: params.id,
-        userId: user.id 
-      }
-    });
+    const supabase = createClient();
+    const { error } = await supabase
+      .from('precos_venda')
+      .delete()
+      .eq('id', params.id)
+      .eq('user_id', user.id);
+
+    if (error) throw error;
 
     return NextResponse.json({ success: true });
   } catch (error) {

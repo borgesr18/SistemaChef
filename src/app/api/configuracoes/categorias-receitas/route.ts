@@ -1,15 +1,19 @@
 //src/app/api/configuracoes/categorias-receitas/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { createClient } from '@/lib/supabase-server';
 import { requireAuth } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
   try {
-    await requireAuth(req);
+    await requireAuth();
 
-    const categorias = await prisma.categoriaReceita.findMany({
-      orderBy: { nome: 'asc' },
-    });
+    const supabase = createClient();
+    const { data: categorias, error } = await supabase
+      .from('categorias_receitas')
+      .select('*')
+      .order('nome', { ascending: true });
+
+    if (error) throw error;
 
     return NextResponse.json(categorias);
   } catch (error) {
@@ -20,7 +24,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    await requireAuth(req);
+    await requireAuth();
 
     const { nome } = await req.json();
 
@@ -28,9 +32,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Nome é obrigatório' }, { status: 400 });
     }
 
-    const categoria = await prisma.categoriaReceita.create({
-      data: { nome },
-    });
+    const supabase = createClient();
+    const { data: categoria, error } = await supabase
+      .from('categorias_receitas')
+      .insert({ nome })
+      .single();
+
+    if (error) throw error;
 
     return NextResponse.json(categoria);
   } catch (error) {

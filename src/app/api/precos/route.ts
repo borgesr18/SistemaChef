@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { createClient } from '@/lib/supabase-server';
 import { requireAuth } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
@@ -8,19 +8,16 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Database not available during build' }, { status: 503 });
     }
     
-    const user = await requireAuth(req);
+    const user = await requireAuth();
     
-    const precos = await prisma.precoVenda.findMany({
-      where: { userId: user.id },
-      include: {
-        producao: {
-          include: {
-            ficha: true
-          }
-        }
-      },
-      orderBy: { createdAt: 'desc' }
-    });
+    const supabase = createClient();
+    const { data: precos, error } = await supabase
+      .from('precos_venda')
+      .select('*, producao:producoes(*, ficha:fichas_tecnicas(*))')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
 
     return NextResponse.json(precos);
   } catch (error) {
@@ -38,31 +35,29 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Database not available during build' }, { status: 503 });
     }
     
-    const user = await requireAuth(req);
+    const user = await requireAuth();
     
     const data = await req.json();
     
-    const preco = await prisma.precoVenda.create({
-      data: {
-        producaoId: data.producaoId,
-        fichaId: data.fichaId,
-        custoUnitario: data.custoUnitario,
+    const supabase = createClient();
+    const { data: preco, error } = await supabase
+      .from('precos_venda')
+      .insert({
+        producao_id: data.producaoId,
+        ficha_id: data.fichaId,
+        custo_unitario: data.custoUnitario,
         lucro1: data.lucro1,
         preco1: data.preco1,
         lucro2: data.lucro2,
         preco2: data.preco2,
         lucro3: data.lucro3,
         preco3: data.preco3,
-        userId: user.id
-      },
-      include: {
-        producao: {
-          include: {
-            ficha: true
-          }
-        }
-      }
-    });
+        user_id: user.id
+      })
+      .select('*, producao:producoes(*, ficha:fichas_tecnicas(*))')
+      .single();
+
+    if (error) throw error;
 
     return NextResponse.json(preco);
   } catch (error) {

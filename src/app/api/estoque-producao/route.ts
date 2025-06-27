@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { createClient } from '@/lib/supabase-server';
 import { requireAuth } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
@@ -8,15 +8,16 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Database not available during build' }, { status: 503 });
     }
 
-    const user = await requireAuth(req);
+    const user = await requireAuth();
     
-    const movimentacoes = await prisma.estoqueProducaoMovimentacao.findMany({
-      where: { userId: user.id },
-      include: {
-        ficha: true
-      },
-      orderBy: { data: 'desc' }
-    });
+    const supabase = createClient();
+    const { data: movimentacoes, error } = await supabase
+      .from('estoque_producao_movimentacoes')
+      .select('*, ficha:fichas_tecnicas(*)')
+      .eq('user_id', user.id)
+      .order('data', { ascending: false });
+
+    if (error) throw error;
 
     return NextResponse.json(movimentacoes);
   } catch (error) {
@@ -34,23 +35,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Database not available during build' }, { status: 503 });
     }
 
-    const user = await requireAuth(req);
+    const user = await requireAuth();
     
     const data = await req.json();
     
-    const movimentacao = await prisma.estoqueProducaoMovimentacao.create({
-      data: {
-        fichaId: data.fichaId,
+    const supabase = createClient();
+    const { data: movimentacao, error } = await supabase
+      .from('estoque_producao_movimentacoes')
+      .insert({
+        ficha_id: data.fichaId,
         quantidade: data.quantidade,
         validade: data.validade,
-        data: data.data ? new Date(data.data) : new Date(),
+        data: data.data || new Date().toISOString(),
         tipo: data.tipo,
-        userId: user.id
-      },
-      include: {
-        ficha: true
-      }
-    });
+        user_id: user.id,
+      })
+      .select('*, ficha:fichas_tecnicas(*)')
+      .single();
+
+    if (error) throw error;
 
     return NextResponse.json(movimentacao);
   } catch (error) {
