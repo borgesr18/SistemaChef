@@ -45,7 +45,7 @@ export const adicionarCategoria = async (nome: string): Promise<CategoriaInsumo 
   }
 };
 
-export const atualizarCategoria = async (id: string, nome: string): Promise<CategoriaInsumo | null> => {
+export const atualizarCategoria = async (id: number, nome: string): Promise<CategoriaInsumo | null> => {
   try {
     const response = await fetch(`/api/configuracoes/categorias-insumos/${id}`, {
       method: 'PUT',

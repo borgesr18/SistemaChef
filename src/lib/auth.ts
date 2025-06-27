@@ -2,6 +2,7 @@
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import jwt from 'jsonwebtoken';
 
 /**
  * Verifica se o usuário autenticado possui o papel exigido.
@@ -26,4 +27,24 @@ export async function requireRole(role: string) {
   }
 
   return user;
+}
+
+/**
+ * Gera um token JWT para o usuário
+ */
+export function signToken(payload: any) {
+  const secret = process.env.JWT_SECRET || 'default-secret-key';
+  return jwt.sign(payload, secret, { expiresIn: '4h' });
+}
+
+/**
+ * Verifica e decodifica um token JWT
+ */
+export function verifyToken(token: string) {
+  try {
+    const secret = process.env.JWT_SECRET || 'default-secret-key';
+    return jwt.verify(token, secret);
+  } catch (error) {
+    return null;
+  }
 }

@@ -33,7 +33,7 @@ export default function CategoriasInsumosPage() {
 
   const salvarEdicao = async () => {
     if (editandoId === null || !editandoNome.trim()) return;
-    await atualizarCategoria(editandoId, editandoNome);
+    await atualizarCategoria(parseInt(editandoId), editandoNome);
     setEditandoId(null);
     setEditandoNome('');
     carregarCategorias();
@@ -41,7 +41,7 @@ export default function CategoriasInsumosPage() {
 
   const removerCategoria = async (id: number) => {
     if (confirm('Tem certeza que deseja excluir esta categoria?')) {
-      await excluirCategoria(id);
+      await excluirCategoria(id.toString());
       carregarCategorias();
     }
   };

@@ -1,13 +1,12 @@
 // /src/app/api/configuracoes/categorias-insumos/route.ts
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireAuth } from '@/lib/auth';
+import { requireAuth } from '@/lib/requireAuth';
 import { NextRequest } from 'next/server';
 
 export async function GET(req: NextRequest) {
   try {
     const categorias = await prisma.categoriaInsumo.findMany({
-      where: { oculto: false },
       orderBy: { nome: 'asc' },
     });
     return NextResponse.json(categorias);
