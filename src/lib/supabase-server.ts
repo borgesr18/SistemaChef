@@ -1,18 +1,7 @@
 // src/lib/supabase-server.ts
-import { cookies } from 'next/headers'
-import { createServerClient } from '@supabase/ssr'
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
+import { Database } from '@/types/supabase';
 
-export const supabaseServer = () => {
-  const cookieStore = cookies()
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value
-        }
-      }
-    }
-  )
-}
+export const supabaseServer = () =>
+  createServerComponentClient<Database>({ cookies });
