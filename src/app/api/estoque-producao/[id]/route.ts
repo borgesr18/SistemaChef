@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { requireAuth } from '@/lib/auth';
+import { createClient } from '@/lib/supabase-server';
+import { requireAuth } from '@/lib/requireAuth';
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -8,26 +8,25 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       return NextResponse.json({ error: 'Database not available during build' }, { status: 503 });
     }
     
-    const user = await requireAuth(req);
+    const user = await requireAuth();
     
     const data = await req.json();
     
-    const movimentacao = await prisma.estoqueProducaoMovimentacao.update({
-      where: { 
-        id: params.id,
-        userId: user.id 
-      },
-      data: {
-        fichaId: data.fichaId,
+    const supabase = createClient();
+    const { data: movimentacao, error } = await supabase
+      .from('estoque_producao_movimentacoes')
+      .update({
+        ficha_id: data.fichaId,
         quantidade: data.quantidade,
         validade: data.validade,
-        data: data.data ? new Date(data.data) : undefined,
+        data: data.data || new Date().toISOString(),
         tipo: data.tipo
-      },
-      include: {
-        ficha: true
-      }
-    });
+      })
+      .eq('id', params.id)
+      .eq('user_id', user.id)
+      .single();
+
+    if (error) throw error;
 
     return NextResponse.json(movimentacao);
   } catch (error) {
@@ -45,14 +44,16 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
       return NextResponse.json({ error: 'Database not available during build' }, { status: 503 });
     }
     
-    const user = await requireAuth(req);
+    const user = await requireAuth();
     
-    await prisma.estoqueProducaoMovimentacao.delete({
-      where: { 
-        id: params.id,
-        userId: user.id 
-      }
-    });
+    const supabase = createClient();
+    const { error } = await supabase
+      .from('estoque_producao_movimentacoes')
+      .delete()
+      .eq('id', params.id)
+      .eq('user_id', user.id);
+
+    if (error) throw error;
 
     return NextResponse.json({ success: true });
   } catch (error) {

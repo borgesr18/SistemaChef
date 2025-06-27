@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { requireAuth } from '@/lib/auth';
+import { createClient } from '@/lib/supabase-server';
+import { requireAuth } from '@/lib/requireAuth';
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -8,11 +8,16 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       return NextResponse.json({ error: 'Database not available during build' }, { status: 503 });
     }
     
-    await requireAuth(req);
+    await requireAuth();
     
-    const produto = await prisma.produto.findUnique({
-      where: { id: params.id }
-    });
+    const supabase = createClient();
+    const { data: produto, error } = await supabase
+      .from('produtos')
+      .select('*')
+      .eq('id', params.id)
+      .single();
+
+    if (error) throw error;
 
     if (!produto) {
       return NextResponse.json({ error: 'Produto não encontrado' }, { status: 404 });
@@ -34,24 +39,28 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       return NextResponse.json({ error: 'Database not available during build' }, { status: 503 });
     }
     
-    await requireAuth(req);
+    await requireAuth();
     
     const data = await req.json();
     
-    const produto = await prisma.produto.update({
-      where: { id: params.id },
-      data: {
+    const supabase = createClient();
+    const { data: produto, error } = await supabase
+      .from('produtos')
+      .update({
         nome: data.nome,
         categoria: data.categoria,
         marca: data.marca,
-        unidadeMedida: data.unidadeMedida,
+        unidade_medida: data.unidadeMedida,
         preco: data.preco,
-        precoUnitario: data.precoUnitario,
+        preco_unitario: data.precoUnitario,
         fornecedor: data.fornecedor,
-        pesoEmbalagem: data.pesoEmbalagem,
-        infoNutricional: data.infoNutricional
-      }
-    });
+        peso_embalagem: data.pesoEmbalagem,
+        info_nutricional: data.infoNutricional
+      })
+      .eq('id', params.id)
+      .single();
+
+    if (error) throw error;
 
     return NextResponse.json(produto);
   } catch (error) {
@@ -69,11 +78,15 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
       return NextResponse.json({ error: 'Database not available during build' }, { status: 503 });
     }
     
-    await requireAuth(req);
+    await requireAuth();
     
-    await prisma.produto.delete({
-      where: { id: params.id }
-    });
+    const supabase = createClient();
+    const { error } = await supabase
+      .from('produtos')
+      .delete()
+      .eq('id', params.id);
+
+    if (error) throw error;
 
     return NextResponse.json({ success: true });
   } catch (error) {

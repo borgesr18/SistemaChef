@@ -1,26 +1,34 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { requireAuth } from '@/lib/auth';
+import { createClient } from '@/lib/supabase-server';
+import { requireAuth } from '@/lib/requireAuth';
 
 export async function DELETE(req: Request, context: { params: { id: string } }) {
   try {
-    await requireAuth(req); // Garante que o usuário esteja autenticado
+    await requireAuth(); // Garante que o usuário esteja autenticado
 
     const { id } = context.params;
 
     // Verifica se a categoria existe
-    const categoria = await prisma.categoriaInsumo.findUnique({
-      where: { id },
-    });
+    const supabase = createClient();
+    const { data: categoria, error: getError } = await supabase
+      .from('categorias_insumos')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (getError) throw getError;
 
     if (!categoria) {
       return NextResponse.json({ error: 'Categoria não encontrada' }, { status: 404 });
     }
 
     // Deleta a categoria
-    await prisma.categoriaInsumo.delete({
-      where: { id },
-    });
+    const { error } = await supabase
+      .from('categorias_insumos')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
 
     return NextResponse.json({ message: 'Categoria excluída com sucesso' });
   } catch (error) {

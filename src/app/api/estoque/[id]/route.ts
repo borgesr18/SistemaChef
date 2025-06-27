@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { requireAuth } from '@/lib/auth';
+import { createClient } from '@/lib/supabase-server';
+import { requireAuth } from '@/lib/requireAuth';
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -8,28 +8,28 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       return NextResponse.json({ error: 'Database not available during build' }, { status: 503 });
     }
 
-    const user = await requireAuth(req);
+    const user = await requireAuth();
     
     const data = await req.json();
     
-    const movimentacao = await prisma.estoqueMovimentacao.update({
-      where: { 
-        id: params.id,
-        userId: user.id 
-      },
-      data: {
-        produtoId: data.produtoId,
+    const supabase = createClient();
+    const { data: movimentacao, error } = await supabase
+      .from('estoque_movimentacoes')
+      .update({
+        produto_id: data.produtoId,
         quantidade: data.quantidade,
         preco: data.preco,
         fornecedor: data.fornecedor,
         marca: data.marca,
-        data: data.data ? new Date(data.data) : undefined,
-        tipo: data.tipo
-      },
-      include: {
-        produto: true
-      }
-    });
+        data: data.data || new Date().toISOString(),
+        tipo: data.tipo,
+      })
+      .eq('id', params.id)
+      .eq('user_id', user.id)
+      .select('*, produto:produtos(*)')
+      .single();
+
+    if (error) throw error;
 
     return NextResponse.json(movimentacao);
   } catch (error) {
@@ -47,14 +47,16 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
       return NextResponse.json({ error: 'Database not available during build' }, { status: 503 });
     }
 
-    const user = await requireAuth(req);
+    const user = await requireAuth();
     
-    await prisma.estoqueMovimentacao.delete({
-      where: { 
-        id: params.id,
-        userId: user.id 
-      }
-    });
+    const supabase = createClient();
+    const { error } = await supabase
+      .from('estoque_movimentacoes')
+      .delete()
+      .eq('id', params.id)
+      .eq('user_id', user.id);
+
+    if (error) throw error;
 
     return NextResponse.json({ success: true });
   } catch (error) {

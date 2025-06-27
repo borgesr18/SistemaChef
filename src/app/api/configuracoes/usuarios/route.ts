@@ -1,22 +1,19 @@
 //src/app/api/configuracoes/usuarios/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { requireAuth } from '@/lib/auth';
+import { createClient } from '@/lib/supabase-server';
+import { requireAuth } from '@/lib/requireAuth';
 
 export async function GET(req: NextRequest) {
   try {
-    const user = await requireAuth(req);
+    const user = await requireAuth();
 
-    const usuarios = await prisma.usuario.findMany({
-      select: {
-        id: true,
-        nome: true,
-        email: true,
-        role: true,
-        criadoEm: true,
-      },
-      orderBy: { nome: 'asc' },
-    });
+    const supabase = createClient();
+    const { data: usuarios, error } = await supabase
+      .from('usuarios')
+      .select('id, nome, email, role, criado_em')
+      .order('nome', { ascending: true });
+
+    if (error) throw error;
 
     return NextResponse.json(usuarios);
   } catch (error) {
@@ -27,16 +24,20 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const user = await requireAuth(req);
+    const user = await requireAuth();
     const data = await req.json();
 
-    const novoUsuario = await prisma.usuario.create({
-      data: {
+    const supabase = createClient();
+    const { data: novoUsuario, error } = await supabase
+      .from('usuarios')
+      .insert({
         nome: data.nome,
         email: data.email,
         role: data.role || 'usuario',
-      },
-    });
+      })
+      .single();
+
+    if (error) throw error;
 
     return NextResponse.json(novoUsuario);
   } catch (error) {

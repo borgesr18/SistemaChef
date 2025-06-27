@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { requireAuth } from '@/lib/auth';
+import { createClient } from '@/lib/supabase-server';
+import { requireAuth } from '@/lib/requireAuth';
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    await requireAuth(req);
+    await requireAuth();
 
     const { nome } = await req.json();
     const { id } = params;
@@ -13,10 +13,14 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       return NextResponse.json({ error: 'Dados inválidos' }, { status: 400 });
     }
 
-    const categoria = await prisma.categoriaReceita.update({
-      where: { id },
-      data: { nome },
-    });
+    const supabase = createClient();
+    const { data: categoria, error } = await supabase
+      .from('categorias_receitas')
+      .update({ nome })
+      .eq('id', id)
+      .single();
+
+    if (error) throw error;
 
     return NextResponse.json(categoria);
   } catch (error) {
@@ -27,13 +31,17 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    await requireAuth(req);
+    await requireAuth();
 
     const { id } = params;
 
-    await prisma.categoriaReceita.delete({
-      where: { id },
-    });
+    const supabase = createClient();
+    const { error } = await supabase
+      .from('categorias_receitas')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
 
     return NextResponse.json({ success: true });
   } catch (error) {

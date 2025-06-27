@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { requireAuth } from '@/lib/auth';
+import { createClient } from '@/lib/supabase-server';
+import { requireAuth } from '@/lib/requireAuth';
 
 export async function GET(req: NextRequest) {
   try {
@@ -8,23 +8,16 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Database not available during build' }, { status: 503 });
     }
     
-    const user = await requireAuth(req);
+    const user = await requireAuth();
     
-    const producoes = await prisma.producao.findMany({
-      where: { userId: user.id },
-      include: {
-        ficha: {
-          include: {
-            ingredientes: {
-              include: {
-                produto: true
-              }
-            }
-          }
-        }
-      },
-      orderBy: { data: 'desc' }
-    });
+    const supabase = createClient();
+    const { data: producoes, error } = await supabase
+      .from('producoes')
+      .select('*, ficha:fichas_tecnicas(*, ingredientes:ingredientes_ficha(*, produto:produtos(*)))')
+      .eq('user_id', user.id)
+      .order('data', { ascending: false });
+
+    if (error) throw error;
 
     return NextResponse.json(producoes);
   } catch (error) {
@@ -42,37 +35,30 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Database not available during build' }, { status: 503 });
     }
     
-    const user = await requireAuth(req);
+    const user = await requireAuth();
     
     const data = await req.json();
     
-    const producao = await prisma.producao.create({
-      data: {
-        fichaId: data.fichaId,
-        quantidadeTotal: data.quantidadeTotal,
-        unidadeQuantidade: data.unidadeQuantidade,
-        pesoUnitario: data.pesoUnitario,
-        unidadePeso: data.unidadePeso,
-        unidadesGeradas: data.unidadesGeradas,
-        custoTotal: data.custoTotal,
-        custoUnitario: data.custoUnitario,
+    const supabase = createClient();
+    const { data: producao, error } = await supabase
+      .from('producoes')
+      .insert({
+        ficha_id: data.fichaId,
+        quantidade_total: data.quantidadeTotal,
+        unidade_quantidade: data.unidadeQuantidade,
+        peso_unitario: data.pesoUnitario,
+        unidade_peso: data.unidadePeso,
+        unidades_geradas: data.unidadesGeradas,
+        custo_total: data.custoTotal,
+        custo_unitario: data.custoUnitario,
         validade: data.validade,
-        data: data.data ? new Date(data.data) : new Date(),
-        userId: user.id
-      },
-      include: {
-        ficha: {
-          include: {
+        data: data.data || new Date().toISOString(),
+        user_id: user.id
+      })
+      .select('*, ficha:fichas_tecnicas(*, ingredientes:ingredientes_ficha(*, produto:produtos(*)))')
+      .single();
 
-            ingredientes: {
-              include: {
-                produto: true
-              }
-            }
-          }
-        }
-      }
-    });
+    if (error) throw error;
 
     return NextResponse.json(producao);
   } catch (error) {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { requireAuth } from '@/lib/auth';
+import { createClient } from '@/lib/supabase-server';
+import { requireAuth } from '@/lib/requireAuth';
 
 export async function GET(req: NextRequest) {
   if (process.env.NEXT_PHASE === 'phase-production-build') {
@@ -8,11 +8,15 @@ export async function GET(req: NextRequest) {
   }
   
   try {
-    await requireAuth(req);
+    await requireAuth();
     
-    const unidades = await prisma.unidade.findMany({
-      orderBy: { nome: 'asc' }
-    });
+    const supabase = createClient();
+    const { data: unidades, error } = await supabase
+      .from('unidades')
+      .select('*')
+      .order('nome', { ascending: true });
+
+    if (error) throw error;
 
     return NextResponse.json(unidades);
   } catch (error) {
@@ -30,13 +34,17 @@ export async function POST(req: NextRequest) {
   }
   
   try {
-    await requireAuth(req);
+    await requireAuth();
     
     const { id, nome } = await req.json();
     
-    const unidade = await prisma.unidade.create({
-      data: { id, nome }
-    });
+    const supabase = createClient();
+    const { data: unidade, error } = await supabase
+      .from('unidades')
+      .insert({ id, nome })
+      .single();
+
+    if (error) throw error;
 
     return NextResponse.json(unidade);
   } catch (error) {

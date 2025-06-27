@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { requireAuth } from '@/lib/auth';
+import { createClient } from '@/lib/supabase-server';
+import { requireAuth } from '@/lib/requireAuth';
 
 export async function GET(req: NextRequest) {
   try {
@@ -8,11 +8,14 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Database not available during build' }, { status: 503 });
     }
     
-    await requireAuth(req);
-    
-    const categorias = await prisma.categoriaReceita.findMany({
-      orderBy: { nome: 'asc' }
-    });
+    await requireAuth();
+    const supabase = createClient();
+    const { data: categorias, error } = await supabase
+      .from('categorias_receitas')
+      .select('*')
+      .order('nome', { ascending: true });
+
+    if (error) throw error;
 
     return NextResponse.json(categorias);
   } catch (error) {
@@ -30,13 +33,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Database not available during build' }, { status: 503 });
     }
     
-    await requireAuth(req);
+    await requireAuth();
     
     const { nome } = await req.json();
     
-    const categoria = await prisma.categoriaReceita.create({
-      data: { nome }
-    });
+    const supabase = createClient();
+    const { data: categoria, error } = await supabase
+      .from('categorias_receitas')
+      .insert({ nome })
+      .single();
+
+    if (error) {
+      if ((error as any).code === '23505') {
+        return NextResponse.json({ error: 'Categoria já existe' }, { status: 409 });
+      }
+      throw error;
+    }
 
     return NextResponse.json(categoria);
   } catch (error) {

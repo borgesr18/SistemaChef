@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { requireAuth } from '@/lib/auth';
+import { createClient } from '@/lib/supabase-server';
+import { requireAuth } from '@/lib/requireAuth';
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -8,21 +8,17 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       return NextResponse.json({ error: 'Database not available during build' }, { status: 503 });
     }
     
-    const user = await requireAuth(req);
+    const user = await requireAuth();
     
-    const fichaTecnica = await prisma.fichaTecnica.findFirst({
-      where: { 
-        id: params.id,
-        userId: user.id 
-      },
-      include: {
-        ingredientes: {
-          include: {
-            produto: true
-          }
-        }
-      }
-    });
+    const supabase = createClient();
+    const { data: fichaTecnica, error } = await supabase
+      .from('fichas_tecnicas')
+      .select('*, ingredientes:ingredientes_ficha(*, produto:produtos(*))')
+      .eq('id', params.id)
+      .eq('user_id', user.id)
+      .single();
+
+    if (error) throw error;
 
     if (!fichaTecnica) {
       return NextResponse.json({ error: 'Ficha técnica não encontrada' }, { status: 404 });
@@ -44,13 +40,15 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       return NextResponse.json({ error: 'Database not available during build' }, { status: 503 });
     }
     
-    const user = await requireAuth(req);
+    const user = await requireAuth();
     
     const data = await req.json();
     
-    await prisma.ingredienteFicha.deleteMany({
-      where: { fichaId: params.id }
-    });
+    const supabase = createClient();
+    await supabase
+      .from('ingredientes_ficha')
+      .delete()
+      .eq('ficha_id', params.id);
     
     let custoTotal = 0;
     const ingredientesComCusto = [];
@@ -59,9 +57,11 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     
     if (data.ingredientes && data.ingredientes.length > 0) {
       for (const ingrediente of data.ingredientes) {
-        const produto = await prisma.produto.findUnique({
-          where: { id: ingrediente.produtoId }
-        });
+        const { data: produto } = await supabase
+          .from('produtos')
+          .select('*')
+          .eq('id', ingrediente.produtoId)
+          .single();
         
         if (produto) {
           let custoIngrediente = 0;
@@ -112,35 +112,27 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       ? custoTotal / data.rendimentoTotal 
       : 0;
     
-    const fichaTecnica = await prisma.fichaTecnica.update({
-      where: { 
-        id: params.id,
-        userId: user.id 
-      },
-      data: {
+    const { data: fichaTecnica, error } = await supabase
+      .from('fichas_tecnicas')
+      .update({
         nome: data.nome,
         descricao: data.descricao,
         categoria: data.categoria,
-        modoPreparo: data.modoPreparo,
-        tempoPreparo: data.tempoPreparo,
-        rendimentoTotal: data.rendimentoTotal,
-        unidadeRendimento: data.unidadeRendimento,
-        custoTotal: custoTotal,
-        custoPorcao: custoPorcao,
+        modo_preparo: data.modoPreparo,
+        tempo_preparo: data.tempoPreparo,
+        rendimento_total: data.rendimentoTotal,
+        unidade_rendimento: data.unidadeRendimento,
+        custo_total: custoTotal,
+        custo_porcao: custoPorcao,
         observacoes: data.observacoes,
-        updatedAt: new Date(),
-        ingredientes: {
-          create: ingredientesComCusto
-        }
-      },
-      include: {
-        ingredientes: {
-          include: {
-            produto: true
-          }
-        }
-      }
-    });
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', params.id)
+      .eq('user_id', user.id)
+      .select('*, ingredientes:ingredientes_ficha(*)')
+      .single();
+
+    if (error) throw error;
 
     return NextResponse.json(fichaTecnica);
   } catch (error) {
@@ -158,14 +150,15 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
       return NextResponse.json({ error: 'Database not available during build' }, { status: 503 });
     }
     
-    const user = await requireAuth(req);
+    const user = await requireAuth();
     
-    await prisma.fichaTecnica.delete({
-      where: { 
-        id: params.id,
-        userId: user.id 
-      }
-    });
+    const { error } = await supabase
+      .from('fichas_tecnicas')
+      .delete()
+      .eq('id', params.id)
+      .eq('user_id', user.id);
+
+    if (error) throw error;
 
     return NextResponse.json({ success: true });
   } catch (error) {

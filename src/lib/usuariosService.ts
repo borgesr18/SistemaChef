@@ -15,15 +15,6 @@ export interface Usuario {
   ativo: boolean;
 }
 
-export interface Usuario {
-  id: number;
-  nome: string;
-  email: string;
-  user_id: string;
-  role: 'admin' | 'editor' | 'viewer' | 'manager';
-  ativo: boolean;
-}
-
 export const listarUsuarios = async () => {
   const { data, error } = await supabase
     .from('perfis_usuarios')
