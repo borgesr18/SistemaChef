@@ -1,8 +1,8 @@
 // src/app/configuracoes/usuarios/page.tsx
 'use client';
 
-import { useUsuarios } from '@/lib/usuariosService';
 import React, { useState } from 'react';
+import { useUsuarios } from '@/lib/usuariosService';
 
 const PageUsuarios = () => {
   const {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import Table, { TableRow, TableCell } from '@/components/ui/Table';
 import { Button } from '@/components/ui/Button';
 import Modal, { useModal } from '@/components/ui/Modal';

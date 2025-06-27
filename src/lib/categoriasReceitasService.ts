@@ -91,7 +91,7 @@ export const useCategoriasReceita = () => {
       try {
         setIsLoading(true);
         const data = await fetchCategorias();
-        setCategorias(Array.isArray(data) ? data : []);
+        setCategorias(data || []);
       } catch (error) {
         console.error('Erro ao carregar categorias:', error);
         setCategorias([]);
@@ -127,7 +127,7 @@ export const useCategoriasReceita = () => {
   const remover = async (id: string) => {
     try {
       await excluirCategoria(id);
-      setCategorias(prev => Array.isArray(prev) ? prev.filter(c => c.id !== id) : []);
+      setCategorias(prev => prev.filter(c => c.id !== id));
       return true;
     } catch (error) {
       console.error('Erro ao remover categoria:', error);

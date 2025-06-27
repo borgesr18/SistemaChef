@@ -15,6 +15,15 @@ export interface Usuario {
   ativo: boolean;
 }
 
+export interface Usuario {
+  id: number;
+  nome: string;
+  email: string;
+  user_id: string;
+  role: 'admin' | 'editor' | 'viewer' | 'manager';
+  ativo: boolean;
+}
+
 export const listarUsuarios = async () => {
   const { data, error } = await supabase
     .from('perfis_usuarios')
@@ -78,7 +87,7 @@ export const useUsuarios = () => {
       try {
         setIsLoading(true);
         const data = await listarUsuarios();
-        setUsuarios(Array.isArray(data) ? data as Usuario[] : []);
+        setUsuarios(data as Usuario[]);
       } catch (error) {
         console.error('Erro ao carregar usuários:', error);
         setUsuarios([]);
@@ -104,7 +113,7 @@ export const useUsuarios = () => {
       });
       if (resultado) {
         const novosUsuarios = await listarUsuarios();
-        setUsuarios(Array.isArray(novosUsuarios) ? novosUsuarios as Usuario[] : []);
+        setUsuarios(novosUsuarios as Usuario[]);
       }
       return resultado;
     } catch (error) {
@@ -117,14 +126,14 @@ export const useUsuarios = () => {
     try {
       const { error } = await supabase
         .from('perfis_usuarios')
-        .update({ nome: dados.nome })
+        .update({ nome: dados.nome, papel: dados.role })
         .eq('id', id);
 
       if (error) throw error;
 
-      setUsuarios(prev => Array.isArray(prev) ? prev.map(u => 
+      setUsuarios(prev => prev.map(u => 
         u.id === id ? { ...u, nome: dados.nome, role: dados.role as any } : u
-      ) : []);
+      ));
       return true;
     } catch (error) {
       console.error('Erro ao editar usuário:', error);
@@ -141,7 +150,7 @@ export const useUsuarios = () => {
 
       if (error) throw error;
 
-      setUsuarios(prev => Array.isArray(prev) ? prev.filter(u => u.id !== id) : []);
+      setUsuarios(prev => prev.filter(u => u.id !== id));
       return true;
     } catch (error) {
       console.error('Erro ao remover usuário:', error);
@@ -158,10 +167,6 @@ export const useUsuarios = () => {
     }
   };
 
-  const logout = () => {
-    setUsuarioAtual(null);
-  };
-
   return {
     usuarios,
     usuarioAtual,
@@ -169,7 +174,6 @@ export const useUsuarios = () => {
     registrarUsuario,
     editarUsuario,
     removerUsuario,
-    alterarSenha,
-    logout
+    alterarSenha
   };
 };
