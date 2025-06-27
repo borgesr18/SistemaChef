@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import Input from '@/components/ui/Input';
-import Button from '@/components/ui/Button';
+import React, { useState, useEffect } from 'react';
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
 import Toast from '@/components/ui/Toast';
 import { useUsuarios } from '@/lib/usuariosService';
 

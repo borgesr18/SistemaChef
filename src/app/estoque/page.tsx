@@ -3,8 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import Card from '@/components/ui/Card';
 import Table, { TableRow, TableCell } from '@/components/ui/Table';
-import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import Modal, { useModal } from '@/components/ui/Modal';
 import Toast from '@/components/ui/Toast';

@@ -3,10 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Card from '@/components/ui/Card';
-import Input from '@/components/ui/Input';
+import { Input } from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import Textarea from '@/components/ui/Textarea';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/Button';
 import { unidadesRendimento, FichaTecnicaInfo, IngredienteFicha, calcularRendimentoTotal, adicionarFichaTecnica } from '@/lib/fichasTecnicasService';
 import { useCategoriasReceita } from '@/lib/categoriasReceitasService';
 import { useProdutos, ProdutoInfo } from '@/lib/produtosService';

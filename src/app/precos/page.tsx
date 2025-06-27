@@ -3,8 +3,8 @@
 import React, { useState } from 'react';
 import Card from '@/components/ui/Card';
 import Select from '@/components/ui/Select';
-import Input from '@/components/ui/Input';
-import Button from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
 import Table, { TableRow, TableCell } from '@/components/ui/Table';
 import { useProducao, ProducaoInfo } from '@/lib/producaoService';
 import { useFichasTecnicas, FichaTecnicaInfo } from '@/lib/fichasTecnicasService';
