@@ -168,3 +168,7 @@ export const useProdutos = () => {
   };
 };
 
+export const obterLabelCategoriaFromRef = (categoriaRef: any) => {
+  return categoriaRef?.nome || 'Categoria não informada';
+};
+

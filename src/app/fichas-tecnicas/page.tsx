@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Card from '@/components/ui/Card';
 import Table, { TableRow, TableCell } from '@/components/ui/Table';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/Button';
 import SlideOver from '@/components/ui/SlideOver';
 import {
   FichaTecnicaInfo,

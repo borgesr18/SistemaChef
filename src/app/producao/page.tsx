@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import Card from '@/components/ui/Card';
-import Input from '@/components/ui/Input';
+import { Input } from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/Button';
 import Table, { TableRow, TableCell } from '@/components/ui/Table';
 import Modal, { useModal } from '@/components/ui/Modal';
 import { useFichasTecnicas, FichaTecnicaInfo, converterUnidade } from '@/lib/fichasTecnicasService';

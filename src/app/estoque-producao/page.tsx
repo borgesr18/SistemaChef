@@ -3,9 +3,9 @@
 import React, { useState } from 'react';
 import Card from '@/components/ui/Card';
 import Table, { TableRow, TableCell } from '@/components/ui/Table';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/Button';
 import Select from '@/components/ui/Select';
-import Input from '@/components/ui/Input';
+import { Input } from '@/components/ui/Input';
 import { useEstoqueProducao } from '@/lib/estoqueProducaoService';
 import { useFichasTecnicas, FichaTecnicaInfo } from '@/lib/fichasTecnicasService';
 
