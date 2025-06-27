@@ -3,10 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Card from '@/components/ui/Card';
-import Input from '@/components/ui/Input';
+import { Input } from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import Textarea from '@/components/ui/Textarea';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/Button';
 import { unidadesRendimento, FichaTecnicaInfo, IngredienteFicha, calcularRendimentoTotal, adicionarFichaTecnica } from '@/lib/fichasTecnicasService';
 import { useCategoriasReceita } from '@/lib/categoriasReceitasService';
 import { useProdutos, ProdutoInfo } from '@/lib/produtosService';
@@ -296,12 +296,11 @@ export default function NovaFichaTecnicaPage() {
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Input
-                  label="Nome da Receita *"
                   name="nome"
                   value={fichaTecnica.nome}
                   onChange={handleChange}
                   error={erros.nome}
-                  placeholder="Ex: Risoto de Cogumelos"
+                  placeholder="Nome da Receita *"
                 />
                 
                 <Select
@@ -327,22 +326,21 @@ export default function NovaFichaTecnicaPage() {
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <Input
-                  label="Tempo de Preparo (minutos) *"
                   name="tempoPreparo"
                   type="number"
                   min="1"
                   value={fichaTecnica.tempoPreparo}
                   onChange={handleChange}
                   error={erros.tempoPreparo}
-                  placeholder="Ex: 45"
+                  placeholder="Tempo de Preparo (minutos) *"
                 />
                 
                 <Input
-                  label="Rendimento Total"
                   name="rendimentoTotal"
                   type="number"
                   readOnly
                   value={fichaTecnica.rendimentoTotal}
+                  placeholder="Rendimento Total"
                 />
                 
                 <Select
@@ -430,7 +428,7 @@ export default function NovaFichaTecnicaPage() {
             </Button>
             <Button
               type="submit"
-              variant="primary"
+              variant="default"
               isLoading={isLoading}
             >
               Salvar Ficha Técnica
@@ -449,7 +447,7 @@ export default function NovaFichaTecnicaPage() {
             <Button variant="outline" onClick={closeModal}>
               Cancelar
             </Button>
-            <Button variant="primary" onClick={adicionarIngrediente}>
+            <Button variant="default" onClick={adicionarIngrediente}>
               Adicionar
             </Button>
           </>
@@ -468,7 +466,6 @@ export default function NovaFichaTecnicaPage() {
           />
 
           <Input
-            label="Quantidade *"
             name="quantidade"
             type="number"
             min="0.1"
@@ -476,7 +473,7 @@ export default function NovaFichaTecnicaPage() {
             value={ingredienteAtual.quantidade}
             onChange={handleIngredienteChange}
             error={erros.quantidade}
-            placeholder="Ex: 250"
+            placeholder="Quantidade *"
           />
 
           <Select

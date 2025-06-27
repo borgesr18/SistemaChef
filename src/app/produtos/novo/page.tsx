@@ -3,9 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Card from '@/components/ui/Card';
-import Input from '@/components/ui/Input';
+import { Input } from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/Button';
 import { useProdutos } from '@/lib/produtosService';
 import { useUnidadesMedida } from '@/lib/unidadesService';
 import { useCategorias } from '@/lib/categoriasService';
@@ -158,12 +158,11 @@ export default function NovoInsumoPage() {
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Input
-                label="Nome do Insumo *"
+                placeholder="Nome do Insumo *"
                 name="nome"
                 value={produto.nome}
                 onChange={handleChange}
                 error={erros.nome}
-                placeholder="Ex: Farinha de Trigo"
               />
 
               <Select
@@ -178,11 +177,10 @@ export default function NovoInsumoPage() {
               />
 
               <Input
-                label="Marca"
+                placeholder="Marca"
                 name="marca"
                 value={produto.marca}
                 onChange={handleChange}
-                placeholder="Ex: Dona Benta"
               />
             </div>
             
@@ -199,7 +197,7 @@ export default function NovoInsumoPage() {
               />
               
               <Input
-                label="Preço (R$) *"
+                placeholder="Preço (R$) *"
                 name="preco"
                 type="number"
                 step="0.01"
@@ -207,27 +205,24 @@ export default function NovoInsumoPage() {
                 value={produto.preco}
                 onChange={handleChange}
                 error={erros.preco}
-                placeholder="Ex: 5.99"
               />
               
               <Input
-                label="Fornecedor *"
+                placeholder="Fornecedor *"
                 name="fornecedor"
                 value={produto.fornecedor}
                 onChange={handleChange}
                 error={erros.fornecedor}
-                placeholder="Ex: Distribuidora Alimentos"
               />
 
               <Input
-                label="Peso/Volume por Embalagem (g ou ml) *"
+                placeholder="Peso/Volume por Embalagem (g ou ml) *"
                 name="pesoEmbalagem"
                 type="number"
                 min="0"
                 value={produto.pesoEmbalagem}
                 onChange={handleChange}
                 error={erros.pesoEmbalagem}
-                placeholder="Ex: 1000"
               />
             </div>
             
@@ -248,7 +243,7 @@ export default function NovoInsumoPage() {
               {mostrarInfoNutricional && (
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <Input
-                    label="Calorias (kcal)"
+                    placeholder="Calorias (kcal)"
                     name="infoNutricional.calorias"
                     type="number"
                     min="0"
@@ -258,7 +253,7 @@ export default function NovoInsumoPage() {
                   />
                   
                   <Input
-                    label="Carboidratos (g)"
+                    placeholder="Carboidratos (g)"
                     name="infoNutricional.carboidratos"
                     type="number"
                     min="0"
@@ -348,7 +343,7 @@ export default function NovoInsumoPage() {
             </Button>
             <Button
               type="submit"
-              variant="primary"
+              variant="default"
               isLoading={isLoading}
             >
               Salvar Insumo

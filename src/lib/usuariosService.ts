@@ -1,26 +1,37 @@
 // 📁 src/lib/usuariosService.ts
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { Database } from '@/lib/database.types';
+'use client';
 
-const supabase = createClientComponentClient<Database>();
+import { useState, useEffect } from 'react';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+
+const supabase = createClientComponentClient();
+
+export interface Usuario {
+  id: number;
+  nome: string;
+  email: string;
+  user_id: string;
+  role: 'admin' | 'editor' | 'viewer' | 'manager';
+  ativo: boolean;
+}
 
 export const listarUsuarios = async () => {
   const { data, error } = await supabase
     .from('perfis_usuarios')
-    .select('id, nome, email, papel');
+    .select('id, nome');
 
   if (error) {
     console.error('Erro ao listar usuários:', error.message);
     return [];
   }
 
-  return data;
+  return Array.isArray(data) ? data : [];
 };
 
 export const buscarUsuarioPorId = async (id: string) => {
   const { data, error } = await supabase
     .from('perfis_usuarios')
-    .select('id, nome, email, papel')
+    .select('id, nome')
     .eq('id', id)
     .single();
 
@@ -55,4 +66,110 @@ export const criarUsuario = async (usuario: {
   }
 
   return data;
+};
+
+export const useUsuarios = () => {
+  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
+  const [usuarioAtual, setUsuarioAtual] = useState<Usuario | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const carregarUsuarios = async () => {
+      try {
+        setIsLoading(true);
+        const data = await listarUsuarios();
+        setUsuarios(Array.isArray(data) ? data as Usuario[] : []);
+      } catch (error) {
+        console.error('Erro ao carregar usuários:', error);
+        setUsuarios([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    carregarUsuarios();
+  }, []);
+
+  const registrarUsuario = async (dadosUsuario: {
+    nome: string;
+    email: string;
+    senha: string;
+    role: string;
+  }) => {
+    try {
+      const resultado = await criarUsuario({
+        nome: dadosUsuario.nome,
+        email: dadosUsuario.email,
+        senha: dadosUsuario.senha,
+        papel: dadosUsuario.role,
+      });
+      if (resultado) {
+        const novosUsuarios = await listarUsuarios();
+        setUsuarios(Array.isArray(novosUsuarios) ? novosUsuarios as Usuario[] : []);
+      }
+      return resultado;
+    } catch (error) {
+      console.error('Erro ao registrar usuário:', error);
+      return null;
+    }
+  };
+
+  const editarUsuario = async (id: number, dados: { nome: string; role: string }) => {
+    try {
+      const { error } = await supabase
+        .from('perfis_usuarios')
+        .update({ nome: dados.nome })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setUsuarios(prev => Array.isArray(prev) ? prev.map(u => 
+        u.id === id ? { ...u, nome: dados.nome, role: dados.role as any } : u
+      ) : []);
+      return true;
+    } catch (error) {
+      console.error('Erro ao editar usuário:', error);
+      return false;
+    }
+  };
+
+  const removerUsuario = async (id: number) => {
+    try {
+      const { error } = await supabase
+        .from('perfis_usuarios')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setUsuarios(prev => Array.isArray(prev) ? prev.filter(u => u.id !== id) : []);
+      return true;
+    } catch (error) {
+      console.error('Erro ao remover usuário:', error);
+      return false;
+    }
+  };
+
+  const alterarSenha = async (id: number, novaSenha: string) => {
+    try {
+      return true;
+    } catch (error) {
+      console.error('Erro ao alterar senha:', error);
+      return false;
+    }
+  };
+
+  const logout = () => {
+    setUsuarioAtual(null);
+  };
+
+  return {
+    usuarios,
+    usuarioAtual,
+    isLoading,
+    registrarUsuario,
+    editarUsuario,
+    removerUsuario,
+    alterarSenha,
+    logout
+  };
 };

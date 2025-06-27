@@ -1,5 +1,13 @@
 // src/lib/categoriasReceitasService.ts
+'use client';
+
+import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase-browser';
+
+export interface CategoriaReceita {
+  id: string;
+  nome: string;
+}
 
 /**
  * Busca todas as categorias de receitas.
@@ -73,3 +81,65 @@ export async function excluirCategoria(id: string) {
     throw new Error('Erro ao excluir categoria');
   }
 }
+
+export const useCategoriasReceita = () => {
+  const [categorias, setCategorias] = useState<CategoriaReceita[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const carregarCategorias = async () => {
+      try {
+        setIsLoading(true);
+        const data = await fetchCategorias();
+        setCategorias(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error('Erro ao carregar categorias:', error);
+        setCategorias([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    carregarCategorias();
+  }, []);
+
+  const adicionar = async (nome: string) => {
+    try {
+      const nova = await adicionarCategoria(nome);
+      setCategorias(prev => [...prev, nova]);
+      return nova;
+    } catch (error) {
+      console.error('Erro ao adicionar categoria:', error);
+      return null;
+    }
+  };
+
+  const atualizar = async (id: string, nome: string) => {
+    try {
+      const atualizada = await atualizarCategoria(id, nome);
+      setCategorias(prev => prev.map(c => c.id === id ? atualizada : c));
+      return atualizada;
+    } catch (error) {
+      console.error('Erro ao atualizar categoria:', error);
+      return null;
+    }
+  };
+
+  const remover = async (id: string) => {
+    try {
+      await excluirCategoria(id);
+      setCategorias(prev => Array.isArray(prev) ? prev.filter(c => c.id !== id) : []);
+      return true;
+    } catch (error) {
+      console.error('Erro ao remover categoria:', error);
+      return false;
+    }
+  };
+
+  return {
+    categorias,
+    isLoading,
+    adicionar,
+    atualizar,
+    remover
+  };
+};

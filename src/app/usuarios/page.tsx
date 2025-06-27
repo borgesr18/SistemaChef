@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Card from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/Button';
 import { useUsuarios } from '@/lib/usuariosService';
 import { Pencil, Trash, Plus } from 'lucide-react';
 

@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import Card from '@/components/ui/Card';
-import Input from '@/components/ui/Input';
+import { Input } from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/Button';
 import Table, { TableRow, TableCell } from '@/components/ui/Table';
 import Modal, { useModal } from '@/components/ui/Modal';
 import { useFichasTecnicas, FichaTecnicaInfo, converterUnidade } from '@/lib/fichasTecnicasService';
@@ -177,7 +177,7 @@ export default function ProducaoPage() {
             error={erros.fichaId}
           />
           <Input
-            label="Quantidade *"
+            placeholder="Quantidade *"
             name="quantidade"
             value={form.quantidade}
             onChange={handleChange}
@@ -191,7 +191,7 @@ export default function ProducaoPage() {
             options={[{ value: 'g', label: 'g' }, { value: 'kg', label: 'kg' }]}
           />
           <Input
-            label="Peso por unidade *"
+            placeholder="Peso por unidade *"
             name="pesoUnitario"
             value={form.pesoUnitario}
             onChange={handleChange}
@@ -205,7 +205,7 @@ export default function ProducaoPage() {
             options={[{ value: 'g', label: 'g' }, { value: 'kg', label: 'kg' }]}
           />
          <Input
-            label="Data *"
+            placeholder="Data *"
             type="date"
             name="data"
             value={form.data}
@@ -213,7 +213,7 @@ export default function ProducaoPage() {
             error={erros.data}
           />
           <Input
-            label="Validade *"
+            placeholder="Validade *"
             type="date"
             name="validade"
             value={form.validade}
@@ -221,7 +221,7 @@ export default function ProducaoPage() {
             error={erros.validade}
           />
           <div className="md:col-span-5 flex justify-end">
-            <Button type="submit" variant="primary">Registrar Produção</Button>
+            <Button type="submit" variant="default">Registrar Produção</Button>
           </div>
         </form>
       </Card>
@@ -290,7 +290,7 @@ export default function ProducaoPage() {
               onChange={e => setEdit({ ...edit, fichaId: e.target.value })}
               options={fichasTecnicas.map((f: FichaTecnicaInfo) => ({ value: f.id, label: f.nome })).sort((a, b) => a.label.localeCompare(b.label))}
             />
-            <Input label="Quantidade" name="quantidadeTotal" value={String(edit.quantidadeTotal)} onChange={e => setEdit({ ...edit, quantidadeTotal: Number(e.target.value) })} />
+            <Input placeholder="Quantidade" name="quantidadeTotal" value={String(edit.quantidadeTotal)} onChange={e => setEdit({ ...edit, quantidadeTotal: Number(e.target.value) })} />
             <Select
               label="Unidade"
               name="unidadeQuantidade"
@@ -298,7 +298,7 @@ export default function ProducaoPage() {
               onChange={e => setEdit({ ...edit, unidadeQuantidade: e.target.value })}
               options={[{ value: 'g', label: 'g' }, { value: 'kg', label: 'kg' }]}
             />
-            <Input label="Peso por unidade" name="pesoUnitario" value={String(edit.pesoUnitario)} onChange={e => setEdit({ ...edit, pesoUnitario: Number(e.target.value) })} />
+            <Input placeholder="Peso por unidade" name="pesoUnitario" value={String(edit.pesoUnitario)} onChange={e => setEdit({ ...edit, pesoUnitario: Number(e.target.value) })} />
             <Select
               label="Unidade"
               name="unidadePeso"
@@ -306,11 +306,11 @@ export default function ProducaoPage() {
               onChange={e => setEdit({ ...edit, unidadePeso: e.target.value })}
               options={[{ value: 'g', label: 'g' }, { value: 'kg', label: 'kg' }]}
             />
-            <Input label="Data" type="date" name="data" value={edit.data} onChange={e => setEdit({ ...edit, data: e.target.value })} />
-            <Input label="Validade" type="date" name="validade" value={edit.validade} onChange={e => setEdit({ ...edit, validade: e.target.value })} />
+            <Input placeholder="Data" type="date" name="data" value={edit.data} onChange={e => setEdit({ ...edit, data: e.target.value })} />
+            <Input placeholder="Validade" type="date" name="validade" value={edit.validade} onChange={e => setEdit({ ...edit, validade: e.target.value })} />
             <div className="md:col-span-6 flex justify-end space-x-2">
               <Button type="button" variant="secondary" onClick={closeModal}>Cancelar</Button>
-              <Button type="submit" variant="primary">Salvar</Button>
+              <Button type="submit" variant="default">Salvar</Button>
             </div>
           </form>
         )}

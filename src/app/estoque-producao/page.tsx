@@ -3,9 +3,9 @@
 import React, { useState } from 'react';
 import Card from '@/components/ui/Card';
 import Table, { TableRow, TableCell } from '@/components/ui/Table';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/Button';
 import Select from '@/components/ui/Select';
-import Input from '@/components/ui/Input';
+import { Input } from '@/components/ui/Input';
 import { useEstoqueProducao } from '@/lib/estoqueProducaoService';
 import { useFichasTecnicas, FichaTecnicaInfo } from '@/lib/fichasTecnicasService';
 
@@ -59,7 +59,7 @@ export default function EstoqueProducaoPage() {
             options={[{ value: 'entrada', label: 'Entrada' }, { value: 'saida', label: 'Saída' }]}
           />
           <Input
-            label="Quantidade *"
+            placeholder="Quantidade *"
             name="quantidade"
             value={form.quantidade}
             onChange={handleChange}
@@ -67,7 +67,7 @@ export default function EstoqueProducaoPage() {
           />
           {form.tipo === 'entrada' && (
             <Input
-              label="Validade"
+              placeholder="Validade"
               type="date"
               name="validade"
               value={form.validade}
@@ -75,7 +75,7 @@ export default function EstoqueProducaoPage() {
             />
           )}
           <div className="flex items-end">
-            <Button type="submit" variant="primary">Registrar</Button>
+            <Button type="submit" variant="default">Registrar</Button>
           </div>
         </form>
       </Card>

@@ -5,7 +5,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import Card from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/Button';
 import Select from '@/components/ui/Select';
 import { useRelatorios } from '@/lib/relatoriosService';
 import Table, { TableRow, TableCell } from '@/components/ui/Table';
