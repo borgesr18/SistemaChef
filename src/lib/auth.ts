@@ -5,6 +5,23 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type { NextRequest } from 'next/server';
 import { Database } from '@/types/supabase';
+import jwt from 'jsonwebtoken';
+
+const JWT_SECRET = process.env.JWT_SECRET || '';
+
+export function signToken(payload: object) {
+  if (!JWT_SECRET) throw new Error('JWT_SECRET not configured');
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: '4h' });
+}
+
+export function verifyToken(token: string) {
+  try {
+    if (!JWT_SECRET) throw new Error('JWT_SECRET not configured');
+    return jwt.verify(token, JWT_SECRET);
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Verifica se o usuário autenticado possui o papel exigido.
