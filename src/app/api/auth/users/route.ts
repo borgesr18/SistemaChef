@@ -13,22 +13,34 @@ export async function GET() {
       .select('id, nome, email, perfil');
 
     if (error) {
-      return NextResponse.json({ error: 'Erro ao buscar usuários' }, { status: 500 });
+      return NextResponse.json(
+        { error: 'Erro ao buscar usuários' },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json(usuarios);
   } catch (error: any) {
     if (error instanceof Error) {
       if (error.message === 'Authentication required') {
-        return NextResponse.json({ error: 'Token de autenticação necessário' }, { status: 401 });
+        return NextResponse.json(
+          { error: 'Token de autenticação necessário' },
+          { status: 401 }
+        );
       }
       if (error.message === 'Insufficient permissions') {
-        return NextResponse.json({ error: 'Permissões insuficientes' }, { status: 403 });
+        return NextResponse.json(
+          { error: 'Permissões insuficientes' },
+          { status: 403 }
+        );
       }
     }
 
     console.error('Erro interno do servidor:', error);
-    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Erro interno do servidor' },
+      { status: 500 }
+    );
   }
 }
 
