@@ -1,15 +1,19 @@
 // src/app/api/configuracoes/unidades/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { createClient } from '@/lib/supabase-server';
 import { requireAuth } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
   try {
-    const user = await requireAuth(req);
+    const user = await requireAuth();
 
-    const unidades = await prisma.unidade.findMany({
-      orderBy: { nome: 'asc' },
-    });
+    const supabase = createClient();
+    const { data: unidades, error } = await supabase
+      .from('unidades')
+      .select('*')
+      .order('nome', { ascending: true });
+
+    if (error) throw error;
 
     return NextResponse.json(unidades);
   } catch (error) {
@@ -23,16 +27,20 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const user = await requireAuth(req);
+    const user = await requireAuth();
     const { nome } = await req.json();
 
     if (!nome || typeof nome !== 'string') {
       return NextResponse.json({ error: 'Nome inválido' }, { status: 400 });
     }
 
-    const nova = await prisma.unidade.create({
-      data: { nome },
-    });
+    const supabase = createClient();
+    const { data: nova, error } = await supabase
+      .from('unidades')
+      .insert({ nome })
+      .single();
+
+    if (error) throw error;
 
     return NextResponse.json(nova);
   } catch (error) {

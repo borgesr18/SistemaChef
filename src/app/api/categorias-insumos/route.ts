@@ -1,16 +1,20 @@
 // src/app/api/categorias-insumos/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { createClient } from '@/lib/supabase-server';
 import { requireAuth } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
   try {
-    const user = await requireAuth(req);
+    const user = await requireAuth();
 
-    const categorias = await prisma.categoriaInsumo.findMany({
-      where: { userId: user.id },
-      orderBy: { nome: 'asc' }
-    });
+    const supabase = createClient();
+    const { data: categorias, error } = await supabase
+      .from('categorias_insumos')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('nome', { ascending: true });
+
+    if (error) throw error;
 
     return NextResponse.json(categorias);
   } catch (error) {
@@ -21,15 +25,16 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const user = await requireAuth(req);
+    const user = await requireAuth();
     const body = await req.json();
 
-    const novaCategoria = await prisma.categoriaInsumo.create({
-      data: {
-        nome: body.nome,
-        userId: user.id
-      }
-    });
+    const supabase = createClient();
+    const { data: novaCategoria, error } = await supabase
+      .from('categorias_insumos')
+      .insert({ nome: body.nome, user_id: user.id })
+      .single();
+
+    if (error) throw error;
 
     return NextResponse.json(novaCategoria);
   } catch (error) {
@@ -40,18 +45,18 @@ export async function POST(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   try {
-    const user = await requireAuth(req);
+    const user = await requireAuth();
     const body = await req.json();
 
-    const categoriaAtualizada = await prisma.categoriaInsumo.update({
-      where: {
-        id: body.id,
-        userId: user.id
-      },
-      data: {
-        nome: body.nome
-      }
-    });
+    const supabase = createClient();
+    const { data: categoriaAtualizada, error } = await supabase
+      .from('categorias_insumos')
+      .update({ nome: body.nome })
+      .eq('id', body.id)
+      .eq('user_id', user.id)
+      .single();
+
+    if (error) throw error;
 
     return NextResponse.json(categoriaAtualizada);
   } catch (error) {
@@ -62,15 +67,17 @@ export async function PUT(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
-    const user = await requireAuth(req);
+    const user = await requireAuth();
     const { id } = await req.json();
 
-    await prisma.categoriaInsumo.delete({
-      where: {
-        id,
-        userId: user.id
-      }
-    });
+    const supabase = createClient();
+    const { error } = await supabase
+      .from('categorias_insumos')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', user.id);
+
+    if (error) throw error;
 
     return NextResponse.json({ message: 'Categoria excluída com sucesso' });
   } catch (error) {

@@ -1,20 +1,18 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { createClient } from '@/lib/supabase-server';
 import { requireAuth } from '@/lib/requireAuth';
 
 export async function GET(req: Request) {
   try {
-    const { user } = await requireAuth(req);
+    const user = await requireAuth();
 
-    const produtos = await prisma.produto.findMany({
-      where: {
-        userId: user.id,
-      },
-      include: {
-        categoriaRef: true,
-        unidadeRef: true,
-      },
-    });
+    const supabase = createClient();
+    const { data: produtos, error } = await supabase
+      .from('produtos')
+      .select('*, categoriaRef:categorias(*), unidadeRef:unidades(*)')
+      .eq('user_id', user.id);
+
+    if (error) throw error;
 
     return NextResponse.json(produtos);
   } catch (error) {

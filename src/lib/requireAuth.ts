@@ -1,12 +1,12 @@
 // lib/requireAuth.ts
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { cookies } from 'next/headers'
+import { createClient } from './supabase-server'
 
-export async function requireAuth(req: Request) {
-  const supabase = createServerComponentClient({ cookies });
+export async function requireAuth() {
+  const supabase = createClient()
   const {
     data: { session },
-  } = await supabase.auth.getSession();
+  } = await supabase.auth.getSession()
 
   if (!session) {
     throw new Error('Authentication required');

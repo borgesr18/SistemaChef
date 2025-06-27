@@ -1,22 +1,19 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { createClient } from "@/lib/supabase-server";
 import { requireAuth } from "@/lib/auth";
 
 export async function GET(req: Request) {
   try {
-    const { user } = await requireAuth(req);
+    const user = await requireAuth();
 
-    const movimentacoes = await prisma.estoqueMovimentacao.findMany({
-      where: {
-        userId: user.id,
-      },
-      include: {
-        produto: true,
-      },
-      orderBy: {
-        data: "desc",
-      },
-    });
+    const supabase = createClient();
+    const { data: movimentacoes, error } = await supabase
+      .from("estoque_movimentacoes")
+      .select("*, produto:produtos(*)")
+      .eq("user_id", user.id)
+      .order("data", { ascending: false });
+
+    if (error) throw error;
 
     return NextResponse.json(movimentacoes);
   } catch (error) {
@@ -27,21 +24,26 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const { user } = await requireAuth(req);
+    const user = await requireAuth();
     const body = await req.json();
 
-    const novaMovimentacao = await prisma.estoqueMovimentacao.create({
-      data: {
-        produtoId: body.produtoId,
+    const supabase = createClient();
+    const { data: novaMovimentacao, error } = await supabase
+      .from("estoque_movimentacoes")
+      .insert({
+        produto_id: body.produtoId,
         quantidade: body.quantidade,
         preco: body.preco,
         fornecedor: body.fornecedor,
         marca: body.marca,
-        data: new Date(body.data),
+        data: body.data || new Date().toISOString(),
         tipo: body.tipo,
-        userId: user.id,
-      },
-    });
+        user_id: user.id,
+      })
+      .select("*, produto:produtos(*)")
+      .single();
+
+    if (error) throw error;
 
     return NextResponse.json(novaMovimentacao);
   } catch (error) {

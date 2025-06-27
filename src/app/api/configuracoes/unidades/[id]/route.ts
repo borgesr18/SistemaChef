@@ -1,20 +1,24 @@
 // 📁 src/app/api/configuracoes/unidades/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { createClient } from '@/lib/supabase-server';
 import { requireAuth } from '@/lib/auth';
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const user = await requireAuth(req);
+    const user = await requireAuth();
     const { id } = params;
 
     if (!id) {
       return NextResponse.json({ error: 'ID da unidade é obrigatório' }, { status: 400 });
     }
 
-    await prisma.unidade.delete({
-      where: { id },
-    });
+    const supabase = createClient();
+    const { error } = await supabase
+      .from('unidades')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
 
     return NextResponse.json({ success: true });
   } catch (error) {

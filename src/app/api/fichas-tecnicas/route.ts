@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { createClient } from '@/lib/supabase-server';
 import { requireAuth } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
@@ -8,19 +8,16 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Database not available during build' }, { status: 503 });
     }
     
-    const user = await requireAuth(req);
+    const user = await requireAuth();
     
-    const fichasTecnicas = await prisma.fichaTecnica.findMany({
-      where: { userId: user.id },
-      include: {
-        ingredientes: {
-          include: {
-            produto: true
-          }
-        }
-      },
-      orderBy: { nome: 'asc' }
-    });
+    const supabase = createClient();
+    const { data: fichasTecnicas, error } = await supabase
+      .from('fichas_tecnicas')
+      .select('*, ingredientes:ingredientes_ficha(*, produto:produtos(*))')
+      .eq('user_id', user.id)
+      .order('nome', { ascending: true });
+
+    if (error) throw error;
 
     return NextResponse.json(fichasTecnicas);
   } catch (error) {
@@ -38,7 +35,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Database not available during build' }, { status: 503 });
     }
     
-    const user = await requireAuth(req);
+    const user = await requireAuth();
     
     const data = await req.json();
     
@@ -49,9 +46,12 @@ export async function POST(req: NextRequest) {
     
     if (data.ingredientes && data.ingredientes.length > 0) {
       for (const ingrediente of data.ingredientes) {
-        const produto = await prisma.produto.findUnique({
-          where: { id: ingrediente.produtoId }
-        });
+        const supabase = createClient();
+        const { data: produto } = await supabase
+          .from('produtos')
+          .select('*')
+          .eq('id', ingrediente.produtoId)
+          .single();
         
         if (produto) {
           let custoIngrediente = 0;
@@ -102,31 +102,26 @@ export async function POST(req: NextRequest) {
       ? custoTotal / data.rendimentoTotal 
       : 0;
     
-    const fichaTecnica = await prisma.fichaTecnica.create({
-      data: {
+    const supabase = createClient();
+    const { data: fichaTecnica, error } = await supabase
+      .from('fichas_tecnicas')
+      .insert({
         nome: data.nome,
         descricao: data.descricao,
         categoria: data.categoria,
-        modoPreparo: data.modoPreparo,
-        tempoPreparo: data.tempoPreparo.toString(),
-        rendimentoTotal: data.rendimentoTotal,
-        unidadeRendimento: data.unidadeRendimento,
-        custoTotal: custoTotal,
-        custoPorcao: custoPorcao,
+        modo_preparo: data.modoPreparo,
+        tempo_preparo: data.tempoPreparo?.toString(),
+        rendimento_total: data.rendimentoTotal,
+        unidade_rendimento: data.unidadeRendimento,
+        custo_total: custoTotal,
+        custo_porcao: custoPorcao,
         observacoes: data.observacoes,
-        userId: user.id,
-        ingredientes: {
-          create: ingredientesComCusto
-        }
-      },
-      include: {
-        ingredientes: {
-          include: {
-            produto: true
-          }
-        }
-      }
-    });
+        user_id: user.id,
+      })
+      .select('*, ingredientes:ingredientes_ficha(*)')
+      .single();
+
+    if (error) throw error;
 
     return NextResponse.json(fichaTecnica);
   } catch (error) {
