@@ -2,10 +2,10 @@
 // ✅ Exemplo de fetchProdutos.ts corrigido
 'use client';
 
-import { supabaseBrowser } from '@/lib/supabase-browser';
+import { supabase } from '@/lib/supabase-browser';
 
 export async function fetchProdutos() {
-  const supabase = supabaseBrowser();
+  const supabase = supabase;
   const {
     data: { session },
   } = await supabase.auth.getSession();

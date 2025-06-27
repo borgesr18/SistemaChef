@@ -3,8 +3,8 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
-import { supabaseBrowser } from '@/lib/supabase-browser'; // ✅
-const supabase = supabaseBrowser(); // ✅
+import { supabase } from '@/lib/supabase-browser'; // ✅
+const supabase = supabase; // ✅
 
 type AuthContextType = {
   user: User | null;

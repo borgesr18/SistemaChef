@@ -1,14 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { supabaseBrowser } from '@/lib/supabase-browser';
+import { supabase } from '@/lib/supabase-browser';
 
 export default function VerificaSessao() {
   const [info, setInfo] = useState<string>('Verificando...');
 
   useEffect(() => {
     const testarSessao = async () => {
-      const { data, error } = await supabaseBrowser().auth.getUser();
+      const { data, error } = await supabase.auth.getUser();
       if (error) {
         console.error('Erro:', error);
         setInfo('❌ Sessão inválida ou ausente');

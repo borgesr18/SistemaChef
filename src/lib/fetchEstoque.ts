@@ -1,8 +1,8 @@
 // lib/fetchEstoque.ts
-import { supabaseBrowser } from '@/lib/supabase-browser';
+import { supabase } from '@/lib/supabase-browser';
 
 export async function fetchProdutos() {
-  const supabase = supabaseBrowser();
+  const supabase = supabase;
   const { data: sessionData, error } = await supabase.auth.getSession();
 
   const token = sessionData?.session?.access_token;
