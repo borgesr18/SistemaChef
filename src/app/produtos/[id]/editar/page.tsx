@@ -3,9 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Card from '@/components/ui/Card';
-import Input from '@/components/ui/Input';
+import { Input } from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/Button';
 import { useProdutos } from '@/lib/produtosService';
 import { useUnidadesMedida } from '@/lib/unidadesService';
 import { useCategorias } from '@/lib/categoriasService';

@@ -3,7 +3,7 @@
 import React from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Card from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/Button';
 import { useProdutos, obterLabelCategoria } from '@/lib/produtosService';
 
 export default function DetalheInsumoPage() {
