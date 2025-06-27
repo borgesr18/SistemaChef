@@ -143,7 +143,7 @@ export const useFichasTecnicas = () => {
     isLoading,
     setFichasTecnicas,
     setIsLoading,
-    obterFichaTecnicaPorId: (id: string) => fichasTecnicas.find((f: FichaTecnicaInfo) => f.id === id),
+    obterFichaTecnicaPorId: (id: string) => Array.isArray(fichasTecnicas) ? fichasTecnicas.find((f: FichaTecnicaInfo) => f.id === id) : undefined,
     calcularRendimentoTotal,
     atualizarFichaTecnica: atualizarFichaTecnica,
     removerFichaTecnica: removerFichaTecnica,

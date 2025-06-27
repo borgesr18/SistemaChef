@@ -127,7 +127,7 @@ export const useCategoriasReceita = () => {
   const remover = async (id: string) => {
     try {
       await excluirCategoria(id);
-      setCategorias(prev => prev.filter(c => c.id !== id));
+      setCategorias(prev => Array.isArray(prev) ? prev.filter(c => c.id !== id) : []);
       return true;
     } catch (error) {
       console.error('Erro ao remover categoria:', error);

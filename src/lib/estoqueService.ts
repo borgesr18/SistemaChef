@@ -179,7 +179,7 @@ export const useEstoque = () => {
         throw new Error('Erro ao deletar movimentação');
       }
 
-      const novas = movimentacoes.filter(m => m.id !== id);
+      const novas = Array.isArray(movimentacoes) ? movimentacoes.filter(m => m.id !== id) : [];
       setMovimentacoes(novas);
       return true;
     } catch (error) {

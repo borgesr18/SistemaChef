@@ -42,12 +42,12 @@ const obterProducoes = async (): Promise<ProducaoInfo[]> => {
     }
     
     const arr = await response.json();
-    return arr.map((p: any) => ({
+    return Array.isArray(arr) ? arr.map((p: any) => ({
       custoTotal: 0,
       custoUnitario: 0,
       validade: '',
       ...p,
-    }));
+    })) : [];
   } catch (err) {
     console.error('Erro ao buscar produções da API:', err);
     return [];
@@ -58,7 +58,7 @@ const recalcTodas = async (
   lista: ProducaoInfo[],
   fichas: FichaTecnicaInfo[]
 ) => {
-  return lista.map(p => calcularCustos(p, fichas));
+  return Array.isArray(lista) ? lista.map(p => calcularCustos(p, fichas)) : [];
 };
 
 const calcularCustos = (
@@ -164,7 +164,7 @@ export const useProducao = () => {
         throw new Error('Erro ao deletar produção');
       }
 
-      const novas = producoes.filter(p => p.id !== id);
+      const novas = Array.isArray(producoes) ? producoes.filter(p => p.id !== id) : [];
       setProducoes(novas);
       return true;
     } catch (error) {

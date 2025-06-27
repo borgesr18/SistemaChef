@@ -9,9 +9,14 @@ export async function requireAuth(req: Request) {
     data: { session },
   } = await supabase.auth.getSession();
 
-  if (!session) {
+  if (!session || !session.user) {
     throw new Error('Authentication required');
   }
 
-  return session.user;
+  const user = session.user;
+  if (!user.id) {
+    throw new Error('Invalid user session');
+  }
+
+  return user;
 }

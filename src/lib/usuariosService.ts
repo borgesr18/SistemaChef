@@ -2,10 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { Database } from '@/lib/database.types';
-
-const supabase = createClientComponentClient<Database>();
+import { supabase } from '@/lib/supabase-browser';
 
 export interface Usuario {
   id: number;
@@ -26,7 +23,7 @@ export const listarUsuarios = async () => {
     return [];
   }
 
-  return data;
+  return Array.isArray(data) ? data : [];
 };
 
 export const buscarUsuarioPorId = async (id: string) => {
@@ -123,9 +120,9 @@ export const useUsuarios = () => {
 
       if (error) throw error;
 
-      setUsuarios(prev => prev.map(u => 
+      setUsuarios(prev => Array.isArray(prev) ? prev.map(u => 
         u.id === id ? { ...u, nome: dados.nome, role: dados.role as any } : u
-      ));
+      ) : []);
       return true;
     } catch (error) {
       console.error('Erro ao editar usuário:', error);
@@ -142,7 +139,7 @@ export const useUsuarios = () => {
 
       if (error) throw error;
 
-      setUsuarios(prev => prev.filter(u => u.id !== id));
+      setUsuarios(prev => Array.isArray(prev) ? prev.filter(u => u.id !== id) : []);
       return true;
     } catch (error) {
       console.error('Erro ao remover usuário:', error);

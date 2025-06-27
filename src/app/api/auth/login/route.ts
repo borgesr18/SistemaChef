@@ -24,9 +24,9 @@ export async function POST(req: NextRequest) {
 
   const token = signToken({
     id: user.id,
-    nome: user.nome,
-    email: user.email,
-    role: user.role,
+    nome: user.nome || '',
+    email: user.email || '',
+    role: user.role || 'user',
   });
 
   cookies().set('token', token, {
@@ -39,8 +39,8 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({
     id: user.id,
-    nome: user.nome,
-    email: user.email,
-    role: user.role,
+    nome: user.nome || '',
+    email: user.email || '',
+    role: user.role || 'user',
   });
 }

@@ -40,7 +40,7 @@ export const obterProdutos = async (): Promise<ProdutoInfo[]> => {
 
     const produtos = await response.json();
 
-    return produtos.map((p: any) => ({
+    return Array.isArray(produtos) ? produtos.map((p: any) => ({
       id: p.id,
       nome: p.nome,
       categoriaId: p.categoria,
@@ -64,7 +64,7 @@ export const obterProdutos = async (): Promise<ProdutoInfo[]> => {
         fibras: Number(p.infoNutricional.fibras),
         sodio: Number(p.infoNutricional.sodio),
       } : undefined,
-    }));
+    })) : [];
   } catch (error) {
     console.error('Erro ao buscar produtos da API:', error);
     return [];
@@ -148,7 +148,7 @@ export const useProdutos = () => {
 
       if (!response.ok) throw new Error('Erro ao remover produto');
 
-      setProdutos(prev => prev.filter(p => p.id !== id));
+      setProdutos(prev => Array.isArray(prev) ? prev.filter(p => p.id !== id) : []);
       return true;
     } catch (error) {
       console.error('Erro ao remover produto:', error);
@@ -156,7 +156,7 @@ export const useProdutos = () => {
     }
   };
 
-  const obterProdutoPorId = (id: string) => produtos.find(p => p.id === id);
+  const obterProdutoPorId = (id: string) => Array.isArray(produtos) ? produtos.find(p => p.id === id) : undefined;
 
   return {
     produtos,

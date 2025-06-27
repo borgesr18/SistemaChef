@@ -137,7 +137,7 @@ export const useUnidadesMedida = () => {
         throw new Error('Erro ao deletar unidade');
       }
 
-      const filtradas = unidades.filter(u => u.id !== id);
+      const filtradas = Array.isArray(unidades) ? unidades.filter(u => u.id !== id) : [];
       setUnidades(filtradas);
       return true;
     } catch (error) {
@@ -146,7 +146,7 @@ export const useUnidadesMedida = () => {
     }
   };
 
-  const obterUnidadePorId = (id: string) => unidades.find(u => u.id === id);
+  const obterUnidadePorId = (id: string) => Array.isArray(unidades) ? unidades.find(u => u.id === id) : undefined;
 
   return {
     unidades,
@@ -161,6 +161,6 @@ export const useUnidadesMedida = () => {
 export const obterLabelUnidade = async (id: string) => {
   if (!id) return 'Não informado';
   const unidades = await obterUnidades();
-  const unidade = unidades.find(u => u.id === id);
+  const unidade = Array.isArray(unidades) ? unidades.find(u => u.id === id) : undefined;
   return unidade ? unidade.nome : id;
 };

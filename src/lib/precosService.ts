@@ -97,7 +97,7 @@ export const usePrecosVenda = () => {
         throw new Error('Erro ao deletar estratégia');
       }
 
-      const novas = estrategias.filter(e => e.id !== id);
+      const novas = Array.isArray(estrategias) ? estrategias.filter(e => e.id !== id) : [];
       setEstrategias(novas);
       return true;
     } catch (error) {

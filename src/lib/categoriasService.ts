@@ -146,7 +146,7 @@ export const useCategorias = () => {
         throw new Error('Erro ao deletar categoria');
       }
 
-      const filtradas = categorias.filter(c => c.id !== id);
+      const filtradas = Array.isArray(categorias) ? categorias.filter(c => c.id !== id) : [];
       setCategorias(filtradas);
       return true;
     } catch (error) {
@@ -155,7 +155,7 @@ export const useCategorias = () => {
     }
   };
 
-  const obterCategoriaPorId = (id: string) => categorias.find(c => c.id === id);
+  const obterCategoriaPorId = (id: string) => Array.isArray(categorias) ? categorias.find(c => c.id === id) : undefined;
 
   return { categorias, isLoading, adicionarCategoria, atualizarCategoria, removerCategoria, obterCategoriaPorId };
 };
@@ -163,6 +163,6 @@ export const useCategorias = () => {
 export const obterLabelCategoria = async (id: string) => {
   if (!id) return 'Não informado';
   const cats = await obterCategorias();
-  const cat = cats.find(c => c.id === id);
+  const cat = Array.isArray(cats) ? cats.find(c => c.id === id) : undefined;
   return cat ? cat.nome : id;
 };
