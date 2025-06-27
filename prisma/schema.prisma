@@ -10,19 +10,20 @@ datasource db {
 
 
 model Usuario {
-  id                              String                            @id @default(cuid())
-  nome                            String
-  email                           String                            @unique
-  senhaHash                       String
-  role                            String                            @default("viewer")
-  oculto                          Boolean                           @default(false)
-  createdAt                       DateTime                          @default(now())
-  updatedAt                       DateTime                          @updatedAt
-  estoqueMovimentacoes            EstoqueMovimentacao[]
-  estoqueProducaoMovimentacoes   EstoqueProducaoMovimentacao[]
-  fichasTecnicas                  FichaTecnica[]
-  producoes                       Producao[]
-  categoriasInsumos               CategoriaInsumo[]
+  id                           String                        @id @default(cuid())
+  nome                         String
+  email                        String                        @unique
+  senhaHash                    String
+  role                         String                        @default("viewer")
+  oculto                       Boolean                       @default(false)
+  createdAt                    DateTime                      @default(now())
+  updatedAt                    DateTime                      @updatedAt
+  estoqueMovimentacoes         EstoqueMovimentacao[]
+  estoqueProducaoMovimentacoes EstoqueProducaoMovimentacao[]
+  fichasTecnicas               FichaTecnica[]
+  producoes                    Producao[]
+  categoriasInsumos            CategoriaInsumo[]
+  Produto                      Produto[]
 
   @@map("usuarios")
 }
