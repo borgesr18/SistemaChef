@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
-import { supabase as supabaseClient } from '@/lib/supabase-browser'; // Renomeia o import
+import { supabase as supabaseClient } from '@/lib/supabase-browser';
 
 type AuthContextType = {
   user: User | null;
