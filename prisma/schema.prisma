@@ -1,6 +1,6 @@
 generator client {
   provider        = "prisma-client-js"
-  previewFeatures = ["multiSchema"] // 👈 necessário para permitir schemas múltiplos
+  previewFeatures = ["multiSchema"]
 }
 
 datasource db {
@@ -10,20 +10,19 @@ datasource db {
 }
 
 model Usuario {
-  id                           String                        @id @default(cuid())
-  nome                         String
-  email                        String                        @unique
-  senhaHash                    String
-  role                         String                        @default("viewer")
-  oculto                       Boolean                       @default(false)
-  createdAt                    DateTime                      @default(now())
-  updatedAt                    DateTime                      @updatedAt
-  estoqueMovimentacoes         EstoqueMovimentacao[]
-  estoqueProducaoMovimentacoes EstoqueProducaoMovimentacao[]
-  fichasTecnicas               FichaTecnica[]
-  producoes                    Producao[]
-  categoriasInsumos            CategoriaInsumo[]
-  Produto                      Produto[]
+  id                              String                            @id @default(cuid())
+  nome                            String
+  email                           String                            @unique
+  senhaHash                       String
+  role                            String                            @default("viewer")
+  oculto                          Boolean                           @default(false)
+  createdAt                       DateTime                          @default(now())
+  updatedAt                       DateTime                          @updatedAt
+  estoqueMovimentacoes            EstoqueMovimentacao[]
+  estoqueProducaoMovimentacoes    EstoqueProducaoMovimentacao[]
+  fichasTecnicas                  FichaTecnica[]
+  producoes                       Producao[]
+  categoriasInsumos               CategoriaInsumo[]
 
   @@map("usuarios")
 }
@@ -47,9 +46,9 @@ model Unidade {
 model Produto {
   id                   String                @id @default(cuid())
   nome                 String
-  categoriaId          String?
+  categoria            String?
   marca                String?
-  unidadeId            String?
+  unidadeMedida        String
   preco                Float
   precoUnitario        Float?
   fornecedor           String?
@@ -59,10 +58,8 @@ model Produto {
   updatedAt            DateTime              @updatedAt
   estoqueMovimentacoes EstoqueMovimentacao[]
   ingredientesFicha    IngredienteFicha[]
-  categoriaRef         Categoria?            @relation(fields: [categoriaId], references: [id])
-  unidadeRef           Unidade?              @relation(fields: [unidadeId], references: [id])
-  userId               String
-  user                 Usuario               @relation(fields: [userId], references: [id])
+  categoriaRef         Categoria?            @relation(fields: [categoria], references: [id])
+  unidadeRef           Unidade               @relation(fields: [unidadeMedida], references: [id])
 
   @@map("produtos")
 }
