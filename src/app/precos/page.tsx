@@ -83,12 +83,12 @@ export default function PrecosPage() {
               return { value: p.id, label };
             })}
           />
-          <Input label="Custo Unitário" readOnly value={prod ? formatar(custoUnit) : ''} />
-          <Input label="Lucro % Preço 1" name="lucro1" value={lucros.lucro1} onChange={e => setLucros(prev => ({ ...prev, lucro1: e.target.value }))} />
-          <Input label="Lucro % Preço 2" name="lucro2" value={lucros.lucro2} onChange={e => setLucros(prev => ({ ...prev, lucro2: e.target.value }))} />
-          <Input label="Lucro % Preço 3" name="lucro3" value={lucros.lucro3} onChange={e => setLucros(prev => ({ ...prev, lucro3: e.target.value }))} />
+          <Input placeholder="Custo Unitário" readOnly value={prod ? formatar(custoUnit) : ''} />
+          <Input placeholder="Lucro % Preço 1" name="lucro1" value={lucros.lucro1} onChange={e => setLucros(prev => ({ ...prev, lucro1: e.target.value }))} />
+          <Input placeholder="Lucro % Preço 2" name="lucro2" value={lucros.lucro2} onChange={e => setLucros(prev => ({ ...prev, lucro2: e.target.value }))} />
+          <Input placeholder="Lucro % Preço 3" name="lucro3" value={lucros.lucro3} onChange={e => setLucros(prev => ({ ...prev, lucro3: e.target.value }))} />
           <div className="md:col-span-6 flex justify-end">
-            <Button type="submit" variant="primary">Salvar Estratégia</Button>
+            <Button type="submit" variant="default">Salvar Estratégia</Button>
           </div>
         </form>
       </Card>

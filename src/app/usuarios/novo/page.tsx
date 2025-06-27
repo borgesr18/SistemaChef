@@ -81,14 +81,14 @@ export default function NovoUsuarioPage() {
 
           {erro && <p className="text-sm text-red-600">{erro}</p>}
 
-          <Input label="Nome" name="nome" value={form.nome} onChange={handleChange} required />
-          <Input label="Email" type="email" name="email" value={form.email} onChange={handleChange} required />
-          <Input label="Confirmar Email" type="email" name="confirmarEmail" value={form.confirmarEmail} onChange={handleChange} required />
-          <Input label="Senha" type="password" name="senha" value={form.senha} onChange={handleChange} required />
+          <Input placeholder="Nome" name="nome" value={form.nome} onChange={handleChange} required />
+          <Input placeholder="Email" type="email" name="email" value={form.email} onChange={handleChange} required />
+          <Input placeholder="Confirmar Email" type="email" name="confirmarEmail" value={form.confirmarEmail} onChange={handleChange} required />
+          <Input placeholder="Senha" type="password" name="senha" value={form.senha} onChange={handleChange} required />
           <p className="text-xs text-gray-600">
             A senha deve ter ao menos 8 caracteres, incluindo letras maiúsculas, minúsculas, números e símbolos.
           </p>
-          <Input label="Confirmar Senha" type="password" name="confirmarSenha" value={form.confirmarSenha} onChange={handleChange} required />
+          <Input placeholder="Confirmar Senha" type="password" name="confirmarSenha" value={form.confirmarSenha} onChange={handleChange} required />
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Perfil</label>
@@ -105,7 +105,7 @@ export default function NovoUsuarioPage() {
             </select>
           </div>
 
-          <Button type="submit" variant="primary" fullWidth>
+          <Button type="submit" variant="default" fullWidth>
             Cadastrar
           </Button>
         </form>

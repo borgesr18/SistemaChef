@@ -292,12 +292,11 @@ export default function EditarFichaTecnicaPage() {
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Input
-                  label="Nome da Receita *"
                   name="nome"
                   value={fichaTecnica.nome}
                   onChange={handleChange}
                   error={erros.nome}
-                  placeholder="Ex: Risoto de Cogumelos"
+                  placeholder="Nome da Receita *"
                 />
                 
                 <Select
@@ -323,22 +322,21 @@ export default function EditarFichaTecnicaPage() {
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <Input
-                  label="Tempo de Preparo (minutos) *"
                   name="tempoPreparo"
                   type="number"
                   min="1"
                   value={fichaTecnica.tempoPreparo}
                   onChange={handleChange}
                   error={erros.tempoPreparo}
-                  placeholder="Ex: 45"
+                  placeholder="Tempo de Preparo (minutos) *"
                 />
                 
                 <Input
-                  label="Rendimento Total"
                   name="rendimentoTotal"
                   type="number"
                   readOnly
                   value={fichaTecnica.rendimentoTotal}
+                  placeholder="Rendimento Total"
                 />
                 
                 <Select
@@ -426,7 +424,7 @@ export default function EditarFichaTecnicaPage() {
             </Button>
             <Button
               type="submit"
-              variant="primary"
+              variant="default"
               isLoading={isSaving}
             >
               Atualizar Ficha Técnica
@@ -445,7 +443,7 @@ export default function EditarFichaTecnicaPage() {
             <Button variant="outline" onClick={closeModal}>
               Cancelar
             </Button>
-            <Button variant="primary" onClick={adicionarIngrediente}>
+            <Button variant="default" onClick={adicionarIngrediente}>
               Adicionar
             </Button>
           </>
@@ -464,7 +462,6 @@ export default function EditarFichaTecnicaPage() {
           />
           
           <Input
-            label="Quantidade *"
             name="quantidade"
             type="number"
             min="0.1"
@@ -472,7 +469,7 @@ export default function EditarFichaTecnicaPage() {
             value={ingredienteAtual.quantidade}
             onChange={handleIngredienteChange}
             error={erros.quantidade}
-            placeholder="Ex: 250"
+            placeholder="Quantidade *"
           />
 
           <Select

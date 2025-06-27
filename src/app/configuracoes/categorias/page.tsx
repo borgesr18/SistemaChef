@@ -70,13 +70,12 @@ export default function CategoriasConfigPage() {
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex flex-wrap gap-2 grow">
-          <Button onClick={openModal} variant="primary">➕ Nova Categoria</Button>
+          <Button onClick={openModal} variant="default">➕ Nova Categoria</Button>
           <Button onClick={handleExport} variant="secondary">⬇️ Exportar</Button>
           <Button onClick={() => fileInput.current?.click()} variant="secondary">⬆️ Importar</Button>
         </div>
         <div className="w-full sm:w-[220px]">
           <Input
-            label=""
             placeholder="Buscar..."
             value={filtro}
             onChange={(e) => setFiltro(e.target.value)}
@@ -102,7 +101,7 @@ export default function CategoriasConfigPage() {
                 <Button size="sm" variant="secondary" onClick={() => iniciarEdicao(cat.id, cat.nome)}>
                   ✏️ Editar
                 </Button>
-                <Button size="sm" variant="danger" onClick={() => removerCategoria(cat.id)}>
+                <Button size="sm" variant="destructive" onClick={() => removerCategoria(cat.id)}>
                   🗑️ Excluir
                 </Button>
               </TableCell>
@@ -115,14 +114,14 @@ export default function CategoriasConfigPage() {
       <Modal isOpen={isOpen} onClose={closeModal} title="Nova Categoria">
         <form onSubmit={handleAdd} className="space-y-4">
           <Input
-            label="Nome"
+            placeholder="Nome"
             value={nova}
             onChange={(e) => setNova(e.target.value)}
             required
           />
           <div className="flex justify-end space-x-2">
             <Button type="button" variant="secondary" onClick={closeModal}>Cancelar</Button>
-            <Button type="submit" variant="primary">Salvar</Button>
+            <Button type="submit" variant="default">Salvar</Button>
           </div>
         </form>
       </Modal>
@@ -131,14 +130,14 @@ export default function CategoriasConfigPage() {
       <Modal isOpen={isEditOpen} onClose={closeEdit} title="Editar Categoria">
         <form onSubmit={handleEdit} className="space-y-4">
           <Input
-            label="Nome"
+            placeholder="Nome"
             value={editar.nome}
             onChange={(e) => setEditar({ ...editar, nome: e.target.value })}
             required
           />
           <div className="flex justify-end space-x-2">
             <Button type="button" variant="secondary" onClick={closeEdit}>Cancelar</Button>
-            <Button type="submit" variant="primary">Salvar</Button>
+            <Button type="submit" variant="default">Salvar</Button>
           </div>
         </form>
       </Modal>

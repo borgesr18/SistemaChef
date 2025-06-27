@@ -72,14 +72,14 @@ export default function PerfilPage() {
       {/* Formulário de dados do perfil */}
       <form onSubmit={handlePerfil} className="space-y-4 max-w-sm">
         <Input
-          label="Nome"
+          placeholder="Nome"
           value={perfilForm.nome}
           onChange={e => setPerfilForm({ ...perfilForm, nome: e.target.value })}
           required
           className="h-[38px]"
         />
         <Input
-          label="Email"
+          placeholder="Email"
           type="email"
           value={perfilForm.email}
           onChange={e => setPerfilForm({ ...perfilForm, email: e.target.value })}
@@ -103,14 +103,14 @@ export default function PerfilPage() {
         {erro && <p className="text-sm text-red-600">{erro}</p>}
 
         <div className="flex justify-end">
-          <Button type="submit" variant="primary">Salvar Perfil</Button>
+          <Button type="submit" variant="default">Salvar Perfil</Button>
         </div>
       </form>
 
       {/* Formulário de alteração de senha */}
       <form onSubmit={handleSenha} className="space-y-4 max-w-sm">
         <Input
-          label="Nova Senha"
+          placeholder="Nova Senha"
           type="password"
           value={senhaForm.senha}
           onChange={e => setSenhaForm({ ...senhaForm, senha: e.target.value })}
@@ -118,7 +118,7 @@ export default function PerfilPage() {
           className="h-[38px]"
         />
         <Input
-          label="Confirmar Senha"
+          placeholder="Confirmar Senha"
           type="password"
           value={senhaForm.confirmar}
           onChange={e => setSenhaForm({ ...senhaForm, confirmar: e.target.value })}
@@ -126,7 +126,7 @@ export default function PerfilPage() {
           className="h-[38px]"
         />
         <div className="flex justify-end">
-          <Button type="submit" variant="primary">Alterar Senha</Button>
+          <Button type="submit" variant="default">Alterar Senha</Button>
         </div>
       </form>
     </div>

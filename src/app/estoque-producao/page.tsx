@@ -59,7 +59,7 @@ export default function EstoqueProducaoPage() {
             options={[{ value: 'entrada', label: 'Entrada' }, { value: 'saida', label: 'Saída' }]}
           />
           <Input
-            label="Quantidade *"
+            placeholder="Quantidade *"
             name="quantidade"
             value={form.quantidade}
             onChange={handleChange}
@@ -67,7 +67,7 @@ export default function EstoqueProducaoPage() {
           />
           {form.tipo === 'entrada' && (
             <Input
-              label="Validade"
+              placeholder="Validade"
               type="date"
               name="validade"
               value={form.validade}
@@ -75,7 +75,7 @@ export default function EstoqueProducaoPage() {
             />
           )}
           <div className="flex items-end">
-            <Button type="submit" variant="primary">Registrar</Button>
+            <Button type="submit" variant="default">Registrar</Button>
           </div>
         </form>
       </Card>

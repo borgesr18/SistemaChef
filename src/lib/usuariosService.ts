@@ -3,9 +3,17 @@
 
 import { useState, useEffect } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { Database } from '@/lib/database.types';
 
-const supabase = createClientComponentClient<Database>();
+const supabase = createClientComponentClient();
+
+export interface Usuario {
+  id: number;
+  nome: string;
+  email: string;
+  user_id: string;
+  role: 'admin' | 'editor' | 'viewer' | 'manager';
+  ativo: boolean;
+}
 
 export interface Usuario {
   id: number;
@@ -19,20 +27,20 @@ export interface Usuario {
 export const listarUsuarios = async () => {
   const { data, error } = await supabase
     .from('perfis_usuarios')
-    .select('id, nome, email, papel');
+    .select('id, nome');
 
   if (error) {
     console.error('Erro ao listar usuários:', error.message);
     return [];
   }
 
-  return data;
+  return Array.isArray(data) ? data : [];
 };
 
 export const buscarUsuarioPorId = async (id: string) => {
   const { data, error } = await supabase
     .from('perfis_usuarios')
-    .select('id, nome, email, papel')
+    .select('id, nome')
     .eq('id', id)
     .single();
 

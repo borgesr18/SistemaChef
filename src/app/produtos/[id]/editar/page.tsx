@@ -385,7 +385,7 @@ export default function EditarInsumoPage() {
             </Button>
             <Button
               type="submit"
-              variant="primary"
+              variant="default"
               isLoading={isLoading}
             >
               Atualizar Insumo

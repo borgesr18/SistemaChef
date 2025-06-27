@@ -32,7 +32,7 @@ export default React.memo(function ProdutosPage() {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800">Insumos</h1>
         <Link href="/produtos/novo">
-          <Button variant="primary">
+          <Button variant="default">
             <span className="material-icons mr-1 text-sm">add</span>
             Novo Insumo
           </Button>
@@ -75,8 +75,8 @@ export default React.memo(function ProdutosPage() {
             <p className="text-sm text-gray-600">Preço: {formatarPreco(selecionado.preco)}</p>
             <div className="flex flex-col space-y-2">
               <Link href={`/produtos/${selecionado.id}`}> <Button variant="secondary" fullWidth>Ver</Button> </Link>
-              <Link href={`/produtos/${selecionado.id}/editar`}> <Button variant="primary" fullWidth>Editar</Button> </Link>
-              <Button variant="danger" fullWidth onClick={() => handleRemover(selecionado.id)}>Excluir</Button>
+              <Link href={`/produtos/${selecionado.id}/editar`}> <Button variant="default" fullWidth>Editar</Button> </Link>
+              <Button variant="destructive" fullWidth onClick={() => handleRemover(selecionado.id)}>Excluir</Button>
             </div>
           </div>
         )}

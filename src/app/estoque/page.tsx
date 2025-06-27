@@ -141,16 +141,16 @@ export default function EstoquePage() {
             options={[{ value: 'entrada', label: 'Entrada' }, { value: 'saida', label: 'Saída' }]}
             className="w-32"
           />
-          <Input label="Quantidade *" name="quantidade" value={form.quantidade} onChange={handleChange} error={erros.quantidade} className="w-28" />
+          <Input placeholder="Quantidade *" name="quantidade" value={form.quantidade} onChange={handleChange} error={erros.quantidade} className="w-28" />
           {form.tipo === 'entrada' && (
             <>
-              <Input label="Preço Unitário *" name="preco" value={form.preco} onChange={handleChange} error={erros.preco} className="w-32" />
-              <Input label="Fornecedor *" name="fornecedor" value={form.fornecedor} onChange={handleChange} error={erros.fornecedor} className="flex-1 min-w-[150px]" />
-              <Input label="Marca" name="marca" value={form.marca} onChange={handleChange} className="flex-1 min-w-[120px]" />
+              <Input placeholder="Preço Unitário *" name="preco" value={form.preco} onChange={handleChange} error={erros.preco} className="w-32" />
+              <Input placeholder="Fornecedor *" name="fornecedor" value={form.fornecedor} onChange={handleChange} error={erros.fornecedor} className="flex-1 min-w-[150px]" />
+              <Input placeholder="Marca" name="marca" value={form.marca} onChange={handleChange} className="flex-1 min-w-[120px]" />
             </>
           )}
           <div className="flex justify-end flex-1">
-            <Button type="submit" variant="primary">Registrar {form.tipo === 'entrada' ? 'Entrada' : 'Saída'}</Button>
+            <Button type="submit" variant="default">Registrar {form.tipo === 'entrada' ? 'Entrada' : 'Saída'}</Button>
           </div>
         </form>
       </Card>
@@ -203,17 +203,17 @@ export default function EstoquePage() {
       <Modal isOpen={isEditOpen} onClose={closeEditModal} title="Editar Movimentação">
         {edit && (
           <form onSubmit={handleEditSubmit} className="space-y-4">
-            <Input label="Quantidade" value={edit.quantidade} onChange={e => setEdit({ ...edit, quantidade: e.target.value })} required />
+            <Input placeholder="Quantidade" value={edit.quantidade} onChange={e => setEdit({ ...edit, quantidade: e.target.value })} required />
             {movimentacoes.find(m => m.id === edit.id)?.tipo === 'entrada' && (
               <>
-                <Input label="Preço Unitário" value={edit.preco} onChange={e => setEdit({ ...edit, preco: e.target.value })} />
-                <Input label="Fornecedor" value={edit.fornecedor} onChange={e => setEdit({ ...edit, fornecedor: e.target.value })} />
-                <Input label="Marca" value={edit.marca} onChange={e => setEdit({ ...edit, marca: e.target.value })} />
+                <Input placeholder="Preço Unitário" value={edit.preco} onChange={e => setEdit({ ...edit, preco: e.target.value })} />
+                <Input placeholder="Fornecedor" value={edit.fornecedor} onChange={e => setEdit({ ...edit, fornecedor: e.target.value })} />
+                <Input placeholder="Marca" value={edit.marca} onChange={e => setEdit({ ...edit, marca: e.target.value })} />
               </>
             )}
             <div className="flex justify-end space-x-2">
               <Button type="button" variant="secondary" onClick={closeEditModal}>Cancelar</Button>
-              <Button type="submit" variant="primary">Salvar</Button>
+              <Button type="submit" variant="default">Salvar</Button>
             </div>
           </form>
         )}

@@ -73,7 +73,7 @@ export default React.memo(function FichasTecnicasPage() {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800">Fichas Técnicas</h1>
         <Link href="/fichas-tecnicas/nova">
-          <Button variant="primary">
+          <Button variant="default">
             <span className="material-icons mr-1 text-sm">add</span>
             Nova Ficha Técnica
           </Button>
@@ -124,9 +124,9 @@ export default React.memo(function FichasTecnicasPage() {
                 <Button variant="secondary" fullWidth>Ver</Button>
               </Link>
               <Link href={`/fichas-tecnicas/${selecionada.id}/editar`}>
-                <Button variant="primary" fullWidth>Editar</Button>
+                <Button variant="default" fullWidth>Editar</Button>
               </Link>
-              <Button variant="danger" fullWidth onClick={() => handleRemover(selecionada.id)}>
+              <Button variant="destructive" fullWidth onClick={() => handleRemover(selecionada.id)}>
                 Excluir
               </Button>
               <Link href={`/producao?ficha=${selecionada.id}`}>

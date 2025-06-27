@@ -71,13 +71,12 @@ export default function UnidadesConfigPage() {
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div className="flex flex-wrap gap-2">
-          <Button onClick={openModal} variant="primary">➕ Nova Unidade</Button>
+          <Button onClick={openModal} variant="default">➕ Nova Unidade</Button>
           <Button onClick={handleExport} variant="secondary">⬇️ Exportar</Button>
           <Button onClick={() => fileInput.current?.click()} variant="secondary">⬆️ Importar</Button>
         </div>
         <div className="w-full sm:w-[220px]">
           <Input
-            label=""
             placeholder="Buscar..."
             value={filtro}
             onChange={e => setFiltro(e.target.value)}
@@ -104,7 +103,7 @@ export default function UnidadesConfigPage() {
                 <Button size="sm" variant="secondary" onClick={() => iniciarEdicao(u.id, u.nome)}>
                   ✏️ Editar
                 </Button>
-                <Button size="sm" variant="danger" onClick={() => removerUnidade(u.id)}>
+                <Button size="sm" variant="destructive" onClick={() => removerUnidade(u.id)}>
                   🗑️ Excluir
                 </Button>
               </TableCell>
@@ -117,14 +116,14 @@ export default function UnidadesConfigPage() {
       <Modal isOpen={isOpen} onClose={closeModal} title="Nova Unidade">
         <form onSubmit={handleAdd} className="space-y-4">
           <Input
-            label="Sigla"
+            placeholder="Sigla"
             value={nova.id}
             onChange={e => setNova({ ...nova, id: e.target.value })}
             required
             className="h-[38px]"
           />
           <Input
-            label="Nome"
+            placeholder="Nome"
             value={nova.nome}
             onChange={e => setNova({ ...nova, nome: e.target.value })}
             required
@@ -132,7 +131,7 @@ export default function UnidadesConfigPage() {
           />
           <div className="flex justify-end space-x-2">
             <Button type="button" variant="secondary" onClick={closeModal}>Cancelar</Button>
-            <Button type="submit" variant="primary">Salvar</Button>
+            <Button type="submit" variant="default">Salvar</Button>
           </div>
         </form>
       </Modal>
@@ -141,13 +140,13 @@ export default function UnidadesConfigPage() {
       <Modal isOpen={isEditOpen} onClose={closeEdit} title="Editar Unidade">
         <form onSubmit={handleEdit} className="space-y-4">
           <Input
-            label="Sigla"
+            placeholder="Sigla"
             value={editar.id}
             disabled
             className="h-[38px]"
           />
           <Input
-            label="Nome"
+            placeholder="Nome"
             value={editar.nome}
             onChange={e => setEditar({ ...editar, nome: e.target.value })}
             required
@@ -155,7 +154,7 @@ export default function UnidadesConfigPage() {
           />
           <div className="flex justify-end space-x-2">
             <Button type="button" variant="secondary" onClick={closeEdit}>Cancelar</Button>
-            <Button type="submit" variant="primary">Salvar</Button>
+            <Button type="submit" variant="default">Salvar</Button>
           </div>
         </form>
       </Modal>
