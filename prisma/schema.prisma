@@ -8,18 +8,19 @@ datasource db {
 }
 
 model Usuario {
-  id                   String                @id @default(cuid())
-  nome                 String
-  email                String                @unique
-  senhaHash            String
-  role                 String                @default("viewer")
-  oculto               Boolean               @default(false)
-  createdAt            DateTime              @default(now())
-  updatedAt            DateTime              @updatedAt
-  estoqueMovimentacoes EstoqueMovimentacao[]
-  fichasTecnicas       FichaTecnica[]
-  producoes            Producao[]
-  categoriasInsumos    CategoriaInsumo[]    
+  id                              String                            @id @default(cuid())
+  nome                            String
+  email                           String                            @unique
+  senhaHash                       String
+  role                            String                            @default("viewer")
+  oculto                          Boolean                           @default(false)
+  createdAt                       DateTime                          @default(now())
+  updatedAt                       DateTime                          @updatedAt
+  estoqueMovimentacoes            EstoqueMovimentacao[]
+  estoqueProducaoMovimentacoes    EstoqueProducaoMovimentacao[]
+  fichasTecnicas                  FichaTecnica[]
+  producoes                       Producao[]
+  categoriasInsumos               CategoriaInsumo[]    
 
   @@map("usuarios")
 }
@@ -143,9 +144,11 @@ model EstoqueProducaoMovimentacao {
   validade   String?
   data       DateTime     @default(now())
   tipo       String
+  userId     String
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @updatedAt
   ficha      FichaTecnica @relation(fields: [fichaId], references: [id])
+  user       Usuario      @relation(fields: [userId], references: [id])
 
   @@map("estoque_producao_movimentacoes")
 }

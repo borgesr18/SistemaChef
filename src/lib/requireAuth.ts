@@ -1,10 +1,9 @@
 // lib/requireAuth.ts
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
-import { Database } from './database.types';
 
 export async function requireAuth(req: Request) {
-  const supabase = createServerComponentClient<Database>({ cookies });
+  const supabase = createServerComponentClient({ cookies });
   const {
     data: { session },
   } = await supabase.auth.getSession();
