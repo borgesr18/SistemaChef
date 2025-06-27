@@ -3,7 +3,6 @@ import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { createMiddlewareClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import type { NextRequest } from 'next/server';
 import { Database } from '@/types/supabase';
 
 /**
@@ -31,7 +30,7 @@ export async function requireRole(role: string) {
   return user;
 }
 
-export async function requireAuth(_req: NextRequest) {
+export async function requireAuth(_req: Request) {
   const supabase = createMiddlewareClient<Database>({ cookies })
   const {
     data: { user },
