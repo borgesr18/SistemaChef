@@ -17,10 +17,10 @@ model Usuario {
   createdAt                       DateTime                          @default(now())
   updatedAt                       DateTime                          @updatedAt
   estoqueMovimentacoes            EstoqueMovimentacao[]
-  estoqueProducaoMovimentacoes    EstoqueProducaoMovimentacao[]
+  estoqueProducaoMovimentacoes   EstoqueProducaoMovimentacao[]
   fichasTecnicas                  FichaTecnica[]
   producoes                       Producao[]
-  categoriasInsumos               CategoriaInsumo[]    
+  categoriasInsumos               CategoriaInsumo[]
 
   @@map("usuarios")
 }
@@ -44,9 +44,9 @@ model Unidade {
 model Produto {
   id                   String                @id @default(cuid())
   nome                 String
-  categoria            String?
+  categoriaId          String?
   marca                String?
-  unidadeMedida        String
+  unidadeId            String?
   preco                Float
   precoUnitario        Float?
   fornecedor           String?
@@ -56,8 +56,10 @@ model Produto {
   updatedAt            DateTime              @updatedAt
   estoqueMovimentacoes EstoqueMovimentacao[]
   ingredientesFicha    IngredienteFicha[]
-  categoriaRef         Categoria?            @relation(fields: [categoria], references: [id])
-  unidadeRef           Unidade               @relation(fields: [unidadeMedida], references: [id])
+  categoriaRef         Categoria?            @relation(fields: [categoriaId], references: [id])
+  unidadeRef           Unidade?              @relation(fields: [unidadeId], references: [id])
+  userId               String
+  user                 Usuario               @relation(fields: [userId], references: [id])
 
   @@map("produtos")
 }
@@ -178,6 +180,7 @@ model CategoriaReceita {
 
   @@map("categorias_receitas")
 }
+
 model CategoriaInsumo {
   id        String   @id @default(cuid())
   nome      String
@@ -186,6 +189,6 @@ model CategoriaInsumo {
   updatedAt DateTime @updatedAt
   user      Usuario  @relation(fields: [userId], references: [id])
 
-  @@unique([nome, userId]) // impede duplicação por usuário
+  @@unique([nome, userId])
   @@map("categorias_insumos")
 }
