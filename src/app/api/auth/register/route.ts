@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { findByEmail, addUsuario, hashSenha, senhaForte, ensureAdmin } from '@/lib/serverUsuarios';
-import { requireRole } from '@/lib/auth';
+import { requireRole } from '@/lib/requireAuth';
 
 export async function POST(req: NextRequest) {
   try {
