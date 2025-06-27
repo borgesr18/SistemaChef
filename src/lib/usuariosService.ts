@@ -16,7 +16,7 @@ export interface Usuario {
 export const listarUsuarios = async () => {
   const { data, error } = await supabase
     .from('perfis_usuarios')
-    .select('id, nome, papel');
+    .select('id, nome');
 
   if (error) {
     console.error('Erro ao listar usuários:', error.message);
@@ -29,7 +29,7 @@ export const listarUsuarios = async () => {
 export const buscarUsuarioPorId = async (id: string) => {
   const { data, error } = await supabase
     .from('perfis_usuarios')
-    .select('id, nome, papel')
+    .select('id, nome')
     .eq('id', id)
     .single();
 
@@ -115,7 +115,7 @@ export const useUsuarios = () => {
     try {
       const { error } = await supabase
         .from('perfis_usuarios')
-        .update({ nome: dados.nome, papel: dados.role })
+        .update({ nome: dados.nome })
         .eq('id', id);
 
       if (error) throw error;

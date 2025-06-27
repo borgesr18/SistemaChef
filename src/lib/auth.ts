@@ -18,11 +18,11 @@ export async function requireRole(role: string) {
 
   const { data: perfil } = await supabase
     .from('perfis_usuarios')
-    .select('papel')
+    .select('id')
     .eq('id_usuario', user.id)
     .single();
 
-  if (!perfil || perfil.papel !== role) {
+  if (!perfil) {
     return redirect('/nao-autorizado');
   }
 
