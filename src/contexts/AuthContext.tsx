@@ -3,74 +3,40 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase-browser'; // ✅
-//const supabase = supabase; // ✅
+import { supabase as supabaseClient } from '@/lib/supabase-browser'; // Renomeia o import
 
 type AuthContextType = {
   user: User | null;
   session: Session | null;
-  loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  signOut: () => void;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
-    const getSession = async () => {
-      const { data } = await supabase.auth.getSession();
+    const {
+      data: { subscription },
+    } = supabaseClient.auth.onAuthStateChange((event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+    });
+
+    supabaseClient.auth.getSession().then(({ data }) => {
       setSession(data.session);
-      setUser(data.session?.user || null);
-      setLoading(false);
-    };
-
-    getSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setSession(session);
-        setUser(session?.user || null);
-      }
-    );
+      setUser(data.session?.user ?? null);
+    });
 
     return () => {
       subscription.unsubscribe();
     };
   }, []);
 
-  const login = async (email: string, password: string) => {
-    setLoading(true);
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      setLoading(false);
-      throw error;
-    }
-
-    setSession(data.session);
-    setUser(data.session.user);
-    setLoading(false);
-    router.push('/');
-  };
-
-  const signOut = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setSession(null);
-    router.push('/login');
-  };
-
   return (
-    <AuthContext.Provider value={{ user, session, loading, login, signOut }}>
+    <AuthContext.Provider value={{ user, session }}>
       {children}
     </AuthContext.Provider>
   );
@@ -78,8 +44,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (!context) throw new Error('useAuth deve ser usado dentro de AuthProvider');
   return context;
 };
+
