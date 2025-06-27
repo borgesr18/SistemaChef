@@ -5,7 +5,7 @@ import { requireAuth } from '@/lib/auth';
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const user = await requireAuth(req);
+    const user = await requireAuth();
     const { id } = params;
 
     if (!id) {

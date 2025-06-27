@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
   }
   
   try {
-    await requireAuth(req);
+    await requireAuth();
     
     const unidades = await prisma.unidade.findMany({
       orderBy: { nome: 'asc' }
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
   }
   
   try {
-    await requireAuth(req);
+    await requireAuth();
     
     const { id, nome } = await req.json();
     

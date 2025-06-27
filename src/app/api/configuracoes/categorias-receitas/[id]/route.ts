@@ -4,7 +4,7 @@ import { requireAuth } from '@/lib/auth';
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    await requireAuth(req);
+    await requireAuth();
 
     const { nome } = await req.json();
     const { id } = params;
@@ -27,7 +27,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    await requireAuth(req);
+    await requireAuth();
 
     const { id } = params;
 

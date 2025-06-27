@@ -5,7 +5,7 @@ import { requireAuth } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
   try {
-    const user = await requireAuth(req);
+    const user = await requireAuth();
 
     const categorias = await prisma.categoriaInsumo.findMany({
       where: { userId: user.id },
@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const user = await requireAuth(req);
+    const user = await requireAuth();
     const body = await req.json();
 
     const novaCategoria = await prisma.categoriaInsumo.create({
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   try {
-    const user = await requireAuth(req);
+    const user = await requireAuth();
     const body = await req.json();
 
     const categoriaAtualizada = await prisma.categoriaInsumo.update({
@@ -62,7 +62,7 @@ export async function PUT(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
-    const user = await requireAuth(req);
+    const user = await requireAuth();
     const { id } = await req.json();
 
     await prisma.categoriaInsumo.delete({

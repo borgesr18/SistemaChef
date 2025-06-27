@@ -4,7 +4,7 @@ import { requireAuth } from '@/lib/requireAuth';
 
 export async function GET(req: Request) {
   try {
-    const { user } = await requireAuth(req);
+    const user = await requireAuth();
 
     const produtos = await prisma.produto.findMany({
       where: {

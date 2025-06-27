@@ -4,7 +4,7 @@ import { requireAuth } from '@/lib/auth';
 
 export async function DELETE(req: Request, context: { params: { id: string } }) {
   try {
-    await requireAuth(req); // Garante que o usuário esteja autenticado
+    await requireAuth(); // Garante que o usuário esteja autenticado
 
     const { id } = context.params;
 

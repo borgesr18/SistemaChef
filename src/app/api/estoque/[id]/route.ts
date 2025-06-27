@@ -8,7 +8,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       return NextResponse.json({ error: 'Database not available during build' }, { status: 503 });
     }
 
-    const user = await requireAuth(req);
+    const user = await requireAuth();
     
     const data = await req.json();
     
@@ -47,7 +47,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
       return NextResponse.json({ error: 'Database not available during build' }, { status: 503 });
     }
 
-    const user = await requireAuth(req);
+    const user = await requireAuth();
     
     await prisma.estoqueMovimentacao.delete({
       where: { 

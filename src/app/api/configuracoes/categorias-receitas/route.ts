@@ -5,7 +5,7 @@ import { requireAuth } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
   try {
-    await requireAuth(req);
+    await requireAuth();
 
     const categorias = await prisma.categoriaReceita.findMany({
       orderBy: { nome: 'asc' },
@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    await requireAuth(req);
+    await requireAuth();
 
     const { nome } = await req.json();
 
